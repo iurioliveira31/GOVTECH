@@ -19,6 +19,7 @@ COPY --from=builder /app/out/package-lock.json ./package-lock.json
 RUN npm ci
 
 COPY --from=builder /app/out/full/ .
+COPY --from=builder /app/packages/db ./packages/db
 # Gera o Prisma Client
 RUN npx prisma generate --schema=packages/db/prisma/schema.prisma
 # Build do projeto
