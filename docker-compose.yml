@@ -1,0 +1,79 @@
+version: '3.9'
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ATENÇÃO: Este arquivo é para desenvolvimento local.
+# Em produção, use docker-compose.prod.yml com secrets gerenciados externamente.
+# Variáveis sensíveis são lidas de .env (não versionado).
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-aplicativo_dev}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_dev_password}
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis_dev_password}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.2
+    environment:
+      - discovery.type=single-node
+      # Segurança habilitada — use HTTPS e credenciais
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false   # SSL desativado apenas para dev local
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elastic_dev_password}
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    ports:
+      - '9200:9200'
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        - 'CMD-SHELL'
+        - >
+          curl -s -u elastic:${ELASTIC_PASSWORD:-elastic_dev_password}
+          http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── BullBoard — UI para monitorar filas BullMQ ────────────────────────────
+  bullboard:
+    image: deadly0/bull-board:latest
+    ports:
+      - '3001:3000'
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_dev_password}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:
+  es-data:

@@ -1,0 +1,54 @@
+{
+  "name": "aplicativo",
+  "private": true,
+  "packageManager": "npm@10.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "turbo run dev --no-daemon --filter=web",
+    "dev:api": "turbo run dev --no-daemon --filter=api-gateway",
+    "dev:worker": "turbo run dev --no-daemon --filter=worker",
+    "dev": "turbo run dev --no-daemon",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "prepare": "husky install",
+    "test": "turbo run test",
+    "db:generate": "turbo run prisma:generate",
+    "db:push": "turbo run prisma:push",
+    "db:migrate": "cd packages/db && npx prisma migrate deploy",
+    "db:migrate:dev": "cd packages/db && npx prisma migrate dev",
+    "pncp:backfill": "ts-node scripts/pncp-backfill.ts",
+    "db:seed": "ts-node --skipProject scripts/seed.ts"
+
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,json,md,css,scss}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "eslint": "^9.7.1",
+    "eslint-config-next": "^16.2.6",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "husky": "^9.0.0",
+    "lint-staged": "^14.0.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.8",
+    "ts-node": "^10.9.2",
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.4"
+  }
+}

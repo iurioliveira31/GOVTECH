@@ -1,0 +1,18 @@
+{
+  "name": "@aplicativo/sync",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@aplicativo/pncp": "*",
+    "@prisma/client": "^5.19.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
+
