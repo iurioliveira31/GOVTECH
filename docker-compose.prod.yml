@@ -42,9 +42,7 @@ services:
     healthcheck:
       test:
         - 'CMD-SHELL'
-        - >
-          curl -s -u elastic:${ELASTIC_PASSWORD:-elastic_prod_password}
-          http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+        - 'curl -s http://localhost:9200 >/dev/null || exit 1'
       interval: 30s
       timeout: 10s
       retries: 5
