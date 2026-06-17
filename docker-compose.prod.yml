@@ -36,7 +36,7 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
-      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g' # 1GB minimum for production
+      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m' # Reduzido para caber no servidor Micro
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
