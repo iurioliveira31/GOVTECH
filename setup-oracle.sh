@@ -9,6 +9,19 @@ echo "=========================================================="
 echo "--> Atualizando pacotes do sistema..."
 sudo apt-get update && sudo apt-get upgrade -y
 
+# 1.5. Create 4GB Swap File (Crucial for 1GB RAM AMD Micro instance)
+echo "--> Configurando arquivo de Swap de 4GB..."
+if [ ! -f /swapfile ]; then
+    sudo fallocate -l 4G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    echo "Swap de 4GB criado com sucesso!"
+else
+    echo "Swap já configurado."
+fi
+
 # 2. Install Docker and Docker Compose
 echo "--> Instalando Docker..."
 if ! command -v docker &> /dev/null; then
