@@ -82,6 +82,18 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
+    // 5. Buscar subscription para retornar no login (frontend seta cookies)
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { userId: user.id },
+      select: {
+        plan: true,
+        status: true,
+        trialEndsAt: true,
+        currentPeriodEnd: true,
+        hasUsedTrial: true,
+      },
+    });
+
     return {
       accessToken,
       refreshToken,
@@ -92,8 +104,18 @@ export class AuthService {
         role: user.role,
         tenantId: user.tenantId,
       },
+      subscription: subscription
+        ? {
+            plan: subscription.plan,
+            status: subscription.status,
+            trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+            currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+            hasUsedTrial: subscription.hasUsedTrial,
+          }
+        : null,
     };
   }
+
 
   // ──────────────────────────────────────────────────────────────────────────
   // Refresh Token Rotation

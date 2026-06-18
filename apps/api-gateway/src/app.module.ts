@@ -9,6 +9,8 @@ import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AlertsModule } from './alerts/alerts.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { EmailModule } from './email/email.module';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
@@ -42,6 +44,9 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     AiModule,
     FavoritesModule,
     AlertsModule,
+    // ── Billing & E-mail ───────────────────────────────────────────────────────
+    SubscriptionsModule,
+    EmailModule,
   ],
   providers: [
     // Rate limiting aplicado globalmente em todos os endpoints
