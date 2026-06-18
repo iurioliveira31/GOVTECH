@@ -2,13 +2,13 @@ import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength, IsIn } fr
 
 export class RegisterDto {
   @IsString() @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString() @MinLength(8)
-  password: string;
+  password!: string;
 
   @IsOptional() @IsString()
   cnpj?: string;
@@ -23,7 +23,7 @@ export class RegisterDto {
   role?: string;
 
   @IsIn(['TRIAL', 'STARTER_MONTHLY', 'STARTER_ANNUAL', 'PRO_MONTHLY', 'PRO_ANNUAL', 'ENTERPRISE'])
-  planChoice: string;
+  planChoice!: string;
 }
 
 export class StartTrialDto {
@@ -33,5 +33,5 @@ export class StartTrialDto {
 
 export class CreateCheckoutDto {
   @IsString() @IsNotEmpty()
-  priceId: string;
+  priceId!: string;
 }

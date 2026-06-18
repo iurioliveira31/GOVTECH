@@ -17,10 +17,9 @@
     "paths": {
       "@aplicativo/pncp": ["../../packages/pncp/src/index.ts"],
       "@aplicativo/sync": ["../../packages/sync/src/index.ts"],
-      "@aplicativo/db": ["../../packages/db/prisma"],
-      "@aplicativo/search": ["../../packages/search/src/index.ts"]
+      "@aplicativo/db": ["../../packages/db/prisma"]
     }
   },
-  "include": ["src/**/*", "../../packages/search/src/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
