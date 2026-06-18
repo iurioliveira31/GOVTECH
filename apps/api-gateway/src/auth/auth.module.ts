@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { TenantGuard } from './guards/tenant.guard';
+import { SubscriptionGuard } from './guards/subscription.guard';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 
@@ -20,7 +21,7 @@ import { AuthController } from './auth.controller';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, RolesGuard, TenantGuard],
-  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, TenantGuard],
+  providers: [AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard],
+  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard],
 })
 export class AuthModule {}

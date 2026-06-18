@@ -6,8 +6,9 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    // Logger estruturado
     logger: ['error', 'warn', 'log'],
+    // rawBody necessário para verificação de assinatura do Stripe Webhook
+    rawBody: true,
   });
 
   const config = app.get(ConfigService);
