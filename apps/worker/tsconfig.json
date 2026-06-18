@@ -10,12 +10,16 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@aplicativo/search": ["../../packages/search/src/index.ts"]
+    }
   },
   "include": [
     "src/**/*",
     "../../packages/sync/src/**/*",
-    "../../packages/pncp/src/**/*"
+    "../../packages/pncp/src/**/*",
+    "../../packages/search/src/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }

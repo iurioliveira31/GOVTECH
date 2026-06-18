@@ -20,6 +20,7 @@ RUN npm ci
 
 COPY --from=builder /app/out/full/ .
 COPY --from=builder /app/packages/db ./packages/db
+COPY --from=builder /app/packages/search ./packages/search
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 # Gera o Prisma Client com a versão 5 para evitar erro da versão 7
 RUN npx prisma@5 generate --schema=packages/db/prisma/schema.prisma
