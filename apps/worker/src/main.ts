@@ -4,6 +4,7 @@ import { startMetricsServer } from './observability/metrics-server';
 import { PncpSyncProcessor } from './jobs/pncp.processor';
 import { ElasticsearchProcessor } from './jobs/elasticsearch.processor';
 import { AlertsProcessor } from './jobs/alerts.processor';
+import { ExpireTrialsProcessor } from './jobs/expire-trials.processor';
 import { SearchService, ElasticsearchClientService } from '@aplicativo/search';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ async function bootstrap() {
   let pncpProcessor: PncpSyncProcessor | null = null;
   let esProcessor: ElasticsearchProcessor | null = null;
   let alertsProcessor: AlertsProcessor | null = null;
+  let expireTrialsProcessor: ExpireTrialsProcessor | null = null;
 
   try {
     const mockConfig = { get: (key: string, def: string) => process.env[key] || def };
@@ -40,6 +42,10 @@ async function bootstrap() {
     alertsProcessor = new AlertsProcessor(prisma, searchService);
     await alertsProcessor.start();
     await alertsProcessor.registrarJobRecorrente();
+
+    expireTrialsProcessor = new ExpireTrialsProcessor(prisma);
+    await expireTrialsProcessor.start();
+    await expireTrialsProcessor.registrarJobRecorrente();
 
     // Se variável de ambiente indicar, dispara sync imediato na inicialização
     if (process.env.PNCP_SYNC_ON_START === 'true') {
@@ -65,6 +71,7 @@ async function bootstrap() {
     await pncpProcessor?.close();
     await esProcessor?.close();
     await alertsProcessor?.close();
+    await expireTrialsProcessor?.close();
     await prisma.$disconnect();
     process.exit(0);
   };
