@@ -1,8 +1,10 @@
 import { Module, OnModuleInit } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { ElasticsearchClientService, SearchService } from '@aplicativo/search';
 import { SearchController } from './search.controller';
 
 @Module({
+  imports: [AuthModule],
   controllers: [SearchController],
   providers:   [ElasticsearchClientService, SearchService],
   exports:     [SearchService],
