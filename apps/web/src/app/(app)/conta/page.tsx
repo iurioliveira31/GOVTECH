@@ -48,7 +48,7 @@ export default function ContaPage() {
     setIsLoadingPortal(true);
     setPortalError('');
     try {
-      const { portalUrl } = await authApi.createCheckout('portal') as { portalUrl: string };
+      const { portalUrl } = await authApi.createCheckout('portal') as unknown as { portalUrl: string };
       window.location.href = portalUrl;
     } catch {
       try {
