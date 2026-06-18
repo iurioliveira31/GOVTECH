@@ -25,6 +25,10 @@ COPY --from=builder /app/tsconfig.json ./tsconfig.json
 RUN npx prisma@5 generate --schema=packages/db/prisma/schema.prisma
 
 ENV NEXT_TELEMETRY_DISABLED 1
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Build do projeto web
 RUN npx turbo run build --filter=web...
 
