@@ -13,9 +13,7 @@
     "baseUrl": "."
   },
   "include": [
-    "src/**/*",
-    "../../packages/sync/src/**/*",
-    "../../packages/pncp/src/**/*"
+    "src/**/*"
   ],
   "exclude": ["node_modules", "dist"]
 }
