@@ -98,6 +98,12 @@ model User {
   mfaSecret          String?
   mfaVerifiedAt      DateTime?
   lastLoginAt        DateTime?
+  /// CNPJ da empresa do usuário (usado para verificar trial único por empresa)
+  cnpj               String?
+  /// Quando o usuário confirmou o e-mail (null = não confirmado)
+  emailVerifiedAt    DateTime?
+  /// URL do avatar do usuário
+  avatarUrl          String?
   createdAt          DateTime                 @default(now())
   updatedAt          DateTime                 @updatedAt
   sessions           UserSession[]
@@ -108,6 +114,9 @@ model User {
   analyticsEvents    AnalyticsEvent[]
   favorites          Favorite[]
   alerts             Alert[]
+  subscription       Subscription?
+  passwordResetTokens PasswordResetToken[]
+  subscriptionAuditLogs SubscriptionAuditLog[]
 
   @@index([tenantId, role])
   @@index([tenantId, isActive])
@@ -973,3 +982,126 @@ model Alert {
 
   @@index([userId, isActive])
 }
+
+// ================================================================
+// LICITAAI — Subscription, Billing & Auth Extras
+// ================================================================
+
+enum SubscriptionPlan {
+  TRIAL
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUAL
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+  TRIAL_STARTED
+  SUBSCRIPTION_CREATED
+  SUBSCRIPTION_CANCELED
+  SUBSCRIPTION_RENEWED
+  PAYMENT_SUCCEEDED
+  PAYMENT_FAILED
+  ACCESS_BLOCKED
+  EMAIL_VERIFIED
+}
+
+/// Assinatura de um usuário na plataforma LicitaAI
+model Subscription {
+  id                     String             @id @default(cuid())
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                 String             @unique
+
+  plan                   SubscriptionPlan   @default(TRIAL)
+  status                 SubscriptionStatus @default(TRIALING)
+
+  /// IDs do Stripe — null quando o plano é TRIAL
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+
+  trialStartsAt          DateTime?
+  trialEndsAt            DateTime?
+  trialDismissedAt       DateTime?          /// usuário fechou o banner de trial
+
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  canceledAt             DateTime?
+
+  hasUsedTrial           Boolean            @default(false)   /// impede 2º trial pelo mesmo e-mail
+  cnpjAtTrial            String?            /// CNPJ registrado no momento do trial (impede trial por CNPJ)
+
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([trialEndsAt])
+}
+
+/// Configuração dos planos disponíveis (seed-only)
+model PlanConfig {
+  id                 String           @id @default(cuid())
+  name               SubscriptionPlan @unique
+  stripePriceIdMes   String?          @unique /// Price ID mensal no Stripe
+  stripePriceIdAnual String?          @unique /// Price ID anual no Stripe
+  priceBrlMes        Decimal          @db.Decimal(10, 2)
+  priceBrlAnual      Decimal          @db.Decimal(10, 2)
+
+  maxAlertsPerDay    Int              @default(5)
+  maxSavedSearches   Int              @default(3)
+  hasPredictiveScore Boolean          @default(false)
+  hasBudgetAnalysis  Boolean          @default(false)
+  hasApiAccess       Boolean          @default(false)
+
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+/// Tokens de redefinição de senha (SHA-256 hash armazenado)
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String    @unique   /// SHA-256 do token enviado por e-mail
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Log de auditoria para ações sensíveis relacionadas a assinaturas e acesso
+model SubscriptionAuditLog {
+  id        String      @id @default(cuid())
+  user      User?       @relation(fields: [userId], references: [id])
+  userId    String?
+  action    AuditAction
+  ip        String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, action])
+  @@index([createdAt])
+}
+
