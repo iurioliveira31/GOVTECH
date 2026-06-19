@@ -11,7 +11,9 @@ const METRICS = [
   { value: '87%', label: 'de precisão preditiva' },
 ];
 
-export default function LoginPage() {
+import { Suspense } from 'react';
+
+function LoginContent() {
   const { login, isLoading, error, clearError } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -371,5 +373,13 @@ export default function LoginPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Carregando...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
