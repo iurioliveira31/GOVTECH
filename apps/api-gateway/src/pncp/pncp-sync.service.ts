@@ -14,11 +14,14 @@ const PNCP_JOB_NAMES = {
   REPROCESSAR_FALHOS: 'pncp:sync:reprocessar-falhos',
 } as const;
 
+const COMPRASGOV_QUEUE_NAME = 'comprasgov-sync';
+
 
 @Injectable()
 export class PncpSyncService {
   private readonly logger = new Logger(PncpSyncService.name);
   private queue: Queue | null = null;
+  private comprasGovQueue: Queue | null = null;
 
   constructor() {
     this.initQueue();
@@ -27,20 +30,29 @@ export class PncpSyncService {
   private initQueue() {
     try {
       const url = new URL(process.env.REDIS_URL ?? 'redis://localhost:6379');
+      const connection = {
+        host: url.hostname,
+        port: Number(url.port) || 6379,
+        password: url.password || undefined,
+      };
+      const jobOptions = {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 60_000 } as const,
+      };
+
       this.queue = new Queue(PNCP_QUEUE_NAME, {
-        connection: {
-          host: url.hostname,
-          port: Number(url.port) || 6379,
-          password: url.password || undefined,
-        },
-        defaultJobOptions: {
-          attempts: 3,
-          backoff: { type: 'exponential', delay: 60_000 },
-        },
+        connection,
+        defaultJobOptions: jobOptions,
       });
-      this.logger.log('Queue PNCP conectada');
+
+      this.comprasGovQueue = new Queue(COMPRASGOV_QUEUE_NAME, {
+        connection,
+        defaultJobOptions: jobOptions,
+      });
+
+      this.logger.log('Queues PNCP e ComprasGov conectadas');
     } catch (err: any) {
-      this.logger.warn(`Queue PNCP não inicializada: ${err.message}`);
+      this.logger.warn(`Queues não inicializadas: ${err.message}`);
     }
   }
 
@@ -120,5 +132,19 @@ export class PncpSyncService {
   async triggerReprocessar() {
     const result = await this.enqueue(PNCP_JOB_NAMES.REPROCESSAR_FALHOS, {});
     return { message: 'Reprocessamento de falhos enfileirado', ...result };
+  }
+
+  async triggerComprasGovHistorico() {
+    if (!this.comprasGovQueue) {
+      this.logger.warn('Queue ComprasGov indisponível');
+      return { enqueued: false, message: 'Redis indisponível' };
+    }
+    const job = await this.comprasGovQueue.add(
+      'sync:historico:trigger',
+      {},
+      { jobId: `comprasgov-manual-${Date.now()}` },
+    );
+    this.logger.log(`Job ComprasGov enfileirado: ${job.id}`);
+    return { enqueued: true, job: job.id, message: 'Sync histórico do ComprasNet enfileirado' };
   }
 }

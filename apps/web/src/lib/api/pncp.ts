@@ -236,4 +236,9 @@ export const pncpApi = {
     const { data } = await apiClient.post('/pncp/sync/incremental');
     return data;
   },
+
+  triggerComprasGov: async () => {
+    const { data } = await apiClient.post('/pncp/sync/comprasgov');
+    return data;
+  },
 };

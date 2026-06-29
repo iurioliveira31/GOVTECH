@@ -279,4 +279,17 @@ export class PncpController {
   reprocessarFalhos() {
     return this.syncService.triggerReprocessar();
   }
+
+  /**
+   * POST /pncp/sync/comprasgov
+   * Dispara sync histórico do ComprasNet (licitações anteriores ao PNCP).
+   * Busca dados de órgãos federais no portal contratos.comprasnet.gov.br.
+   */
+  @Post('sync/comprasgov')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'OWNER')
+  @HttpCode(HttpStatus.ACCEPTED)
+  triggerSyncComprasGov() {
+    return this.syncService.triggerComprasGovHistorico();
+  }
 }

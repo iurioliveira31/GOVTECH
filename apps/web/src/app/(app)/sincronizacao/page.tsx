@@ -18,6 +18,7 @@ function statusColor(status: string) {
 export default function SincronizacaoPage() {
   const queryClient = useQueryClient();
   const [triggering, setTriggering] = useState(false);
+  const [triggeringComprasGov, setTriggeringComprasGov] = useState(false);
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['sync-status-detail'],
@@ -34,10 +35,25 @@ export default function SincronizacaoPage() {
     onError: () => setTriggering(false),
   });
 
+  const triggerComprasGovMutation = useMutation({
+    mutationFn: () => pncpApi.triggerComprasGov(),
+    onSuccess: () => {
+      setTriggeringComprasGov(false);
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['sync-status-detail'] }), 2000);
+    },
+    onError: () => setTriggeringComprasGov(false),
+  });
+
   const handleTrigger = () => {
     setTriggering(true);
     triggerMutation.mutate();
   };
+
+  const handleTriggerComprasGov = () => {
+    setTriggeringComprasGov(true);
+    triggerComprasGovMutation.mutate();
+  };
+
 
   return (
     <>
@@ -49,6 +65,16 @@ export default function SincronizacaoPage() {
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
           <button className="btn btn-ghost btn-sm" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? <span className="spinner" /> : '↻'} Atualizar
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleTriggerComprasGov}
+            disabled={triggeringComprasGov || triggerComprasGovMutation.isPending}
+            title="Importar licitações históricas do ComprasNet (pré-PNCP)"
+          >
+            {triggeringComprasGov || triggerComprasGovMutation.isPending ? (
+              <><span className="spinner" /> Importando...</>
+            ) : '🏛 Sync ComprasGov'}
           </button>
           <button
             className="btn btn-primary"
