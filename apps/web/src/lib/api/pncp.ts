@@ -98,7 +98,7 @@ export interface Fornecedor {
 }
 
 export interface SyncStatus {
-  recentes: Array<{
+  ultimosSyncs: Array<{
     entityType: string;
     status: string;
     registrosProcessados: number;

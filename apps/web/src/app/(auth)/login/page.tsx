@@ -15,7 +15,6 @@ import { Suspense } from 'react';
 
 function LoginContent() {
   const { login, isLoading, error, clearError } = useAuthStore();
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
@@ -42,7 +41,7 @@ function LoginContent() {
     try {
       await login(email, password);
       const redirect = searchParams.get('redirect') ?? '/dashboard';
-      router.push(redirect);
+      window.location.href = redirect;
     } catch {
       // erro exibido via store.error
     }

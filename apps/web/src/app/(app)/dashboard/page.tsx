@@ -67,8 +67,8 @@ function SyncStatusCard() {
     <div className="card">
       <div className="card-header">
         <h2 className="card-title">Sincronização PNCP</h2>
-        <span className={`badge ${isLoading ? 'badge-neutral' : data?.recentes?.[0]?.status === 'CONCLUIDO' ? 'badge-success' : 'badge-warning'}`}>
-          {isLoading ? 'Carregando...' : data?.recentes?.[0]?.status ?? 'Aguardando'}
+        <span className={`badge ${isLoading ? 'badge-neutral' : data?.ultimosSyncs?.[0]?.status === 'CONCLUIDO' ? 'badge-success' : 'badge-warning'}`}>
+          {isLoading ? 'Carregando...' : data?.ultimosSyncs?.[0]?.status ?? 'Aguardando'}
         </span>
       </div>
       <div className="card-body">
@@ -76,9 +76,9 @@ function SyncStatusCard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 48 }} />)}
           </div>
-        ) : data?.recentes?.length ? (
+        ) : data?.ultimosSyncs?.length ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {data.recentes.slice(0, 5).map((item, i) => (
+            {data.ultimosSyncs.slice(0, 5).map((item, i: number) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: 'var(--space-3)',

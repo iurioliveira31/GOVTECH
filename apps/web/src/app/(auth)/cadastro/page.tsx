@@ -160,7 +160,6 @@ function StepIndicator({ current }: { current: Step }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CadastroPage() {
-  const router = useRouter();
   const { setSubscription } = useAuthStore();
   const [step, setStep] = useState<Step>(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -217,6 +216,9 @@ export default function CadastroPage() {
         role: form.jobRole || undefined,
         planChoice: finalPlan,
       });
+
+      // Login automático
+      useAuthStore.getState().setUserAndTokens(res.user, res.accessToken, res.refreshToken);
 
       // Atualizar store com a subscription criada
       if (res.subscription) {
@@ -641,11 +643,10 @@ export default function CadastroPage() {
 
             <div>
               <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 8 }}>
-                Verifique seu e-mail
+                Cadastro Concluído!
               </h2>
               <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6, maxWidth: 360 }}>
-                Enviamos um link de confirmação para <strong style={{ color: 'var(--color-text-primary)' }}>{form.email}</strong>.
-                Clique no link para ativar sua conta.
+                Seu acesso foi criado com sucesso. Como estamos em um <strong>ambiente de demonstração</strong>, não é necessário confirmar seu e-mail.
               </p>
             </div>
 
@@ -662,7 +663,7 @@ export default function CadastroPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 300 }}>
               <button id="btn-goto-dashboard" type="button" className="btn btn-primary btn-lg"
-                onClick={() => router.push('/dashboard')}
+                onClick={() => { window.location.href = '/dashboard'; }}
                 style={{ width: '100%' }}>
                 Ir para o Dashboard →
               </button>
