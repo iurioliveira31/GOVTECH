@@ -64,4 +64,18 @@ export class IntelligenceController {
   getOrgaoAnalise(@Param('cnpj') cnpj: string) {
     return this.svc.getOrgaoAnalise(cnpj);
   }
+
+  /**
+   * GET /intelligence/fornecedores-vencedores
+   * Ranking de fornecedores vencedores por segmento (Saúde, Educação, Tecnologia, etc.)
+   */
+  @Get('fornecedores-vencedores')
+  getFornecedoresVencedores(
+    @Query('segmento') segmento = 'saude',
+    @Query('anoInicio', new DefaultValuePipe(2025), ParseIntPipe) anoInicio = 2025,
+    @Query('anoFim', new DefaultValuePipe(2026), ParseIntPipe) anoFim = 2026,
+    @Query('cnpjConcorrente') cnpjConcorrente?: string,
+  ) {
+    return this.svc.getFornecedoresVencedores(segmento, anoInicio, anoFim, cnpjConcorrente);
+  }
 }

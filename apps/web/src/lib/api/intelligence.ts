@@ -72,6 +72,21 @@ export interface OrgaoAnalise {
   scoreOportunidade: number;
 }
 
+export interface FornecedorVencedorItem {
+  cnpj: string;
+  razaoSocial: string;
+  totalContratos: number;
+  valorTotal: number;
+  estados: string;
+  marketShare: number;
+  isConcorrente?: boolean;
+}
+
+export interface FornecedoresVencedoresResponse {
+  fornecedores: FornecedorVencedorItem[];
+  valorTotalMercado: number;
+}
+
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export const intelligenceApi = {
@@ -94,4 +109,15 @@ export const intelligenceApi = {
     const { data } = await apiClient.get(`/intelligence/orgao/${cnpj}`);
     return data;
   },
+
+  getFornecedoresVencedores: async (params: {
+    segmento?: string;
+    anoInicio?: number;
+    anoFim?: number;
+    cnpjConcorrente?: string;
+  } = {}): Promise<FornecedoresVencedoresResponse> => {
+    const { data } = await apiClient.get('/intelligence/fornecedores-vencedores', { params });
+    return data;
+  },
 };
+

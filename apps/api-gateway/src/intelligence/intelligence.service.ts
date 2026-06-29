@@ -500,4 +500,122 @@ export class IntelligenceService {
 
     return { score: Math.max(0, Math.min(100, score)), motivos };
   }
+
+  // ── 4. Fornecedores Vencedores por Segmento & Market Share ──────────────────
+  async getFornecedoresVencedores(
+    segmento = 'saude',
+    anoInicio = 2025,
+    anoFim = 2026,
+    cnpjConcorrente?: string,
+  ): Promise<{
+    fornecedores: Array<{
+      cnpj: string;
+      razaoSocial: string;
+      totalContratos: number;
+      valorTotal: number;
+      estados: string;
+      marketShare: number;
+      isConcorrente?: boolean;
+    }>;
+    valorTotalMercado: number;
+  }> {
+    const keywordsMap: Record<string, string[]> = {
+      saude: ['saude', 'saúde', 'medico', 'médico', 'medicamento', 'hospital', 'hosp', 'clinica', 'clínica', 'farmacia', 'farmácia', 'cirurgico', 'cirúrgico', 'odontologico', 'vacina', 'insumo', 'leito'],
+      educacao: ['educacao', 'educação', 'escola', 'ensino', 'creche', 'pedagogico', 'pedagógico', 'merenda', 'aula', 'livro', 'aluno', 'professor', 'universidade', 'colegio', 'colégio'],
+      tecnologia: ['tecnologia', 'software', 'licenca', 'licença', 'computador', 'notebook', 'suporte ti', 'desenvolvimento', 'nuvem', 'cloud', 'sistema', 'internet', 'fibra', 'ti'],
+      construcao: ['construcao', 'construção', 'obra', 'reforma', 'asfalto', 'pavimentacao', 'pavimentação', 'engenharia', 'cimento', 'concreto', 'predio', 'prédio', 'infraestrutura'],
+    };
+
+    const words = keywordsMap[segmento.toLowerCase()] ?? keywordsMap.saude;
+    const likeClauses = words.map(w => `c."objetoContrato" ILIKE '%${w}%' OR c."orgaoRazaoSocial" ILIKE '%${w}%'`).join(' OR ');
+
+    // 1. Valor total do mercado no segmento/período
+    const totalMercadoRow = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT COALESCE(SUM(c."valorGlobal"), 0)::text AS "total"
+      FROM "PncpContrato" c
+      WHERE c."valorGlobal" > 0
+        AND c."anoContrato" >= ${anoInicio}
+        AND c."anoContrato" <= ${anoFim}
+        AND (${likeClauses})
+    `);
+    const valorTotalMercado = parseFloat(totalMercadoRow[0]?.total ?? '0');
+
+    // 2. Query dos fornecedores vencedores
+    const fornecedoresRows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        c."niFornecedor" AS "cnpj",
+        MAX(c."nomeRazaoSocialFornecedor") AS "razaoSocial",
+        COUNT(*)::int AS "totalContratos",
+        SUM(c."valorGlobal")::text AS "valorTotal",
+        STRING_AGG(DISTINCT c."unidadeUfSigla", ', ') AS "estados"
+      FROM "PncpContrato" c
+      WHERE c."niFornecedor" IS NOT NULL
+        AND c."valorGlobal" > 0
+        AND c."anoContrato" >= ${anoInicio}
+        AND c."anoContrato" <= ${anoFim}
+        AND (${likeClauses})
+      GROUP BY c."niFornecedor"
+      ORDER BY SUM(c."valorGlobal") DESC
+      LIMIT 10
+    `);
+
+    // Mapeia e calcula o market share de cada um
+    let fornecedores = fornecedoresRows.map(r => {
+      const valor = parseFloat(r.valorTotal ?? '0');
+      const share = valorTotalMercado > 0 ? (valor / valorTotalMercado) * 100 : 0;
+      return {
+        cnpj: r.cnpj,
+        razaoSocial: r.razaoSocial ?? 'Não informado',
+        totalContratos: r.totalContratos,
+        valorTotal: valor,
+        estados: r.estados ?? '',
+        marketShare: Math.round(share * 10) / 10,
+        isConcorrente: cnpjConcorrente ? r.cnpj.replace(/\D/g, '') === cnpjConcorrente.replace(/\D/g, '') : false
+      };
+    });
+
+    // Se o concorrente buscado não estiver no Top 10, adicionamos ele no final da lista
+    if (cnpjConcorrente) {
+      const cnpjClean = cnpjConcorrente.replace(/\D/g, '');
+      const jaExiste = fornecedores.some(f => f.cnpj.replace(/\D/g, '') === cnpjClean);
+      if (!jaExiste) {
+        const concorrenteRow = await this.prisma.$queryRawUnsafe<any[]>(`
+          SELECT 
+            c."niFornecedor" AS "cnpj",
+            MAX(c."nomeRazaoSocialFornecedor") AS "razaoSocial",
+            COUNT(*)::int AS "totalContratos",
+            SUM(c."valorGlobal")::text AS "valorTotal",
+            STRING_AGG(DISTINCT c."unidadeUfSigla", ', ') AS "estados"
+          FROM "PncpContrato" c
+          WHERE c."niFornecedor" = '${cnpjClean}'
+            AND c."valorGlobal" > 0
+            AND c."anoContrato" >= ${anoInicio}
+            AND c."anoContrato" <= ${anoFim}
+            AND (${likeClauses})
+          GROUP BY c."niFornecedor"
+        `);
+
+        if (concorrenteRow.length > 0) {
+          const r = concorrenteRow[0];
+          const valor = parseFloat(r.valorTotal ?? '0');
+          const share = valorTotalMercado > 0 ? (valor / valorTotalMercado) * 100 : 0;
+          fornecedores.push({
+            cnpj: r.cnpj,
+            razaoSocial: r.razaoSocial ?? 'Não informado',
+            totalContratos: r.totalContratos,
+            valorTotal: valor,
+            estados: r.estados ?? '',
+            marketShare: Math.round(share * 10) / 10,
+            isConcorrente: true
+          });
+        }
+      }
+    }
+
+    return {
+      fornecedores,
+      valorTotalMercado
+    };
+  }
 }
+
