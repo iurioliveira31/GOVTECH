@@ -94,10 +94,8 @@ export class AlertsProcessor {
     // A data base é o último trigger ou há 7 dias atrás
     const since = alert.lastTriggeredAt ?? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
-    // Constrói a busca. Se alert.entidade == 'todos', busca em ambos.
-    // Atualmente SearchService suporta `searchContratacoes` e `searchContratos`.
+    // Constrói a busca
     let totalFound = 0;
-    
     const query = alert.keywords.join(' ');
     
     const resp = await this.searchService.search({
@@ -109,10 +107,137 @@ export class AlertsProcessor {
     });
     totalFound = resp.total;
 
-    if (totalFound > 0) {
-      // Mock envio de email
-      Logger.info(`[MOCK EMAIL] Para: ${alert.user.email} | Assunto: Alerta "${alert.name}" | Foram encontrados ${totalFound} novos resultados desde ${since.toISOString()}!`);
-      
+    if (totalFound > 0 && resp.items?.length) {
+      const emailTo = alert.user.email;
+      const userName = alert.user.nome ?? 'Assinante';
+      const alertName = alert.name;
+
+      Logger.info(`[Alerts] Enviando notificações para ${emailTo} - ${totalFound} novos matches no alerta "${alertName}"`);
+
+      // ── 1. Enviar E-mail via Resend ──────────────────────────────────────────
+      const RESEND_API_KEY = process.env.RESEND_API_KEY;
+      const EMAIL_FROM = process.env.EMAIL_FROM ?? 'LicitaAI <noreply@licitaai.com.br>';
+      const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:3000';
+
+      const itemsHtml = resp.items.slice(0, 5).map(item => {
+        const valorFormatado = item.valorPrincipal 
+          ? `R$ ${item.valorPrincipal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : 'Valor estimado não divulgado';
+        
+        return `
+          <tr><td style="padding:16px;background:#1b2230;border-radius:10px;margin-bottom:12px;display:block;border:1px solid rgba(255,255,255,0.05)">
+            <div style="font-weight:700;color:#f1f5f9;font-size:14px;margin-bottom:6px;line-height:1.4">${item.objeto && item.objeto.length > 130 ? item.objeto.substring(0, 130) + '...' : (item.objeto ?? 'Sem objeto')}</div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">
+              🏛️ ${item.orgaoRazaoSocial ?? 'Órgão não especificado'} | 📍 Estado: ${item.uf ?? 'N/A'}
+            </div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="font-weight:700;color:#10b981;font-size:14px">${valorFormatado}</td>
+                <td align="right">
+                  <a href="${FRONTEND_URL}/${item.tipo === 'contrato' ? 'contratos' : 'licitacoes'}/${item.id}" style="color:#3b82f6;text-decoration:none;font-weight:700;font-size:13px">Ver Detalhes →</a>
+                </td>
+              </tr>
+            </table>
+          </td></tr>
+          <tr><td style="height:8px"></td></tr>
+        `;
+      }).join('');
+
+      const emailHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#0D1117;font-family:Inter,system-ui,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#161B22;border:1px solid rgba(148,163,184,0.12);border-radius:16px;overflow:hidden">
+        <tr><td style="padding:32px;text-align:center;background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+          <div style="font-size:28px;font-weight:900;color:white;letter-spacing:-1px">🎯 LicitaAI</div>
+          <p style="color:rgba(255,255,255,0.85);font-size:14px;margin:8px 0 0">Novas Oportunidades Encontradas</p>
+        </td></tr>
+        <tr><td style="padding:40px">
+          <h1 style="color:#f1f5f9;font-size:20px;font-weight:800;margin:0 0 8px">Olá, ${userName}!</h1>
+          <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 24px">
+            Seu alerta de monitoramento <strong style="color:#818cf8">"${alertName}"</strong> encontrou 
+            <strong style="color:#f1f5f9">${totalFound}</strong> novos resultados desde ${since.toLocaleDateString('pt-BR')}.
+          </p>
+
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${itemsHtml}
+          </table>
+
+          ${totalFound > 5 ? `
+            <p style="color:#94a3b8;font-size:13px;text-align:center;margin:16px 0 24px">
+              E mais ${totalFound - 5} outras licitações encontradas.
+            </p>
+          ` : ''}
+
+          <div style="margin-top:24px;text-align:center">
+            <a href="${FRONTEND_URL}/busca?q=${encodeURIComponent(query)}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px">Ver todos os resultados no painel →</a>
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+      if (RESEND_API_KEY) {
+        try {
+          const emailResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: EMAIL_FROM,
+              to: emailTo,
+              subject: `[LicitaAI] ${totalFound} novas licitações para "${alertName}"`,
+              html: emailHtml,
+            }),
+          });
+          if (emailResponse.ok) {
+            Logger.info(`[Alerts] E-mail enviado com sucesso para ${emailTo}`);
+          } else {
+            Logger.error(`[Alerts] Falha ao enviar e-mail via Resend: status ${emailResponse.status}`);
+          }
+        } catch (err: any) {
+          Logger.error(`[Alerts] Erro ao enviar e-mail de alerta: ${err.message}`);
+        }
+      } else {
+        Logger.info(`[Alerts MOCK EMAIL] Envio simulado para ${emailTo} - Match "${alertName}": ${totalFound} itens.`);
+      }
+
+      // ── 2. Enviar WhatsApp (Mock ou Integração) ──────────────────────────────
+      // O número de telefone pode ser extraído do objeto de usuário caso o schema/cadastro o armazene.
+      // Caso contrário, usamos o número cadastrado no perfil ou mock.
+      const userPhone = (alert.user as any).telefone ?? '';
+      const whatsappMsg = `*LicitaAI - Alerta Ativo* 🎯\n\nOlá, *${userName}*!\n\nSeu alerta de busca *"${alertName}"* encontrou *${totalFound}* novos resultados hoje!\n\n🔍 Palavras-chave: ${alert.keywords.join(', ')}\n\nClique no link abaixo para conferir a lista no seu painel:\n${FRONTEND_URL}/busca?q=${encodeURIComponent(query)}`;
+
+      if (userPhone && process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_KEY) {
+        try {
+          const waResponse = await fetch(process.env.WHATSAPP_API_URL, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.WHATSAPP_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              number: userPhone.replace(/\D/g, ''),
+              message: whatsappMsg,
+            }),
+          });
+          if (waResponse.ok) {
+            Logger.info(`[Alerts] Mensagem de WhatsApp enviada para ${userPhone}`);
+          } else {
+            Logger.error(`[Alerts] Falha ao enviar WhatsApp: status ${waResponse.status}`);
+          }
+        } catch (err: any) {
+          Logger.error(`[Alerts] Erro ao enviar WhatsApp de alerta: ${err.message}`);
+        }
+      } else {
+        Logger.info(`[Alerts MOCK WHATSAPP] Destinatário: ${userPhone || 'Sem telefone'} | Mensagem:\n${whatsappMsg}`);
+      }
+
       // Atualiza lastTriggeredAt
       await this.prisma.alert.update({
         where: { id: alert.id },
