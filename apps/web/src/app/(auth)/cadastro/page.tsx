@@ -218,8 +218,11 @@ export default function CadastroPage() {
       });
 
       // Login automático
-      useAuthStore.getState().setUserAndTokens(res.user, res.accessToken, res.refreshToken);
-
+      useAuthStore.getState().setUserAndTokens(
+        { ...res.user, nome: res.user.name },
+        res.accessToken,
+        res.refreshToken
+      );
       // Atualizar store com a subscription criada
       if (res.subscription) {
         setSubscription({
