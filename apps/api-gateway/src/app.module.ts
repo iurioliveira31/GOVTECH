@@ -11,6 +11,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { EmailModule } from './email/email.module';
+import { IntelligenceModule } from './intelligence/intelligence.module';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
@@ -44,6 +45,7 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     AiModule,
     FavoritesModule,
     AlertsModule,
+    IntelligenceModule,
     // ── Billing & E-mail ───────────────────────────────────────────────────────
     SubscriptionsModule,
     EmailModule,
