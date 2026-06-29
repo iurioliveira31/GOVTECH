@@ -43,8 +43,12 @@ export interface RegisterResponse {
     id: string;
     email: string;
     name: string;
+    role: string;
+    tenantId: string;
   };
   subscription: SubscriptionInfo;
+  accessToken: string;
+  refreshToken: string;
   checkoutUrl?: string;  // só para planos pagos
   requireEmailVerification: boolean;
 }
@@ -56,7 +60,7 @@ export const authApi = {
   },
 
   register: async (payload: RegisterPayload): Promise<RegisterResponse> => {
-    const { data } = await apiClient.post<RegisterResponse>('/auth/register', payload);
+    const { data } = await apiClient.post<RegisterResponse>('/subscriptions/register', payload);
     return data;
   },
 

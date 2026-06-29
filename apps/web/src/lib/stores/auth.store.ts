@@ -31,6 +31,7 @@ interface AuthState {
   clearError: () => void;
   isAuthenticated: () => boolean;
   setSubscription: (sub: SubscriptionInfo | null) => void;
+  setUserAndTokens: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   dismissTrialBanner: () => void;
 }
 
@@ -70,6 +71,13 @@ export const useAuthStore = create<AuthState>()(
           deleteCookie('sub_plan');
           deleteCookie('trial_ends_at');
         }
+      },
+
+      setUserAndTokens: (user, accessToken, refreshToken) => {
+        localStorage.setItem('access_token', accessToken);
+        localStorage.setItem('refresh_token', refreshToken);
+        setCookie('access_token', accessToken, 1);
+        set({ user });
       },
 
       dismissTrialBanner: () => {

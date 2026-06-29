@@ -9,6 +9,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { RegisterDto, StartTrialDto, CreateCheckoutDto } from './dto/subscription.dto';
+import { AuthService } from '../auth/auth.service';
 
 // ── Planos e Price IDs (configuráveis por env) ─────────────────────────────
 const PRICE_IDS: Record<string, string> = {
@@ -59,6 +60,7 @@ export class SubscriptionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly authService: AuthService,
   ) {}
 
   // ── 1. Registrar novo usuário ────────────────────────────────────────────
@@ -175,8 +177,30 @@ export class SubscriptionsService {
       },
     });
 
+    // Gerar tokens para autologin
+    const { accessToken, refreshToken, refreshTokenHash } = await this.authService.generateTokens({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      tenantId: user.tenantId,
+    });
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tenantId: user.tenantId,
+        tokenHash: refreshTokenHash,
+        expiresAt,
+      },
+    });
+
     return {
-      user: { id: user.id, email: user.email, name: user.name },
+      accessToken,
+      refreshToken,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId },
       subscription: this.formatSubscription(subscription),
       checkoutUrl,
       requireEmailVerification: true,

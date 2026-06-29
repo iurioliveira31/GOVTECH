@@ -222,7 +222,7 @@ export class AuthService {
   // Helpers
   // ──────────────────────────────────────────────────────────────────────────
 
-  private async generateTokens(payload: JwtPayload) {
+  public async generateTokens(payload: JwtPayload) {
     const accessToken = await this.jwt.signAsync(payload, {
       expiresIn: this.config.get<string>('JWT_EXPIRES_IN', '15m'),
     });
@@ -234,7 +234,7 @@ export class AuthService {
     return { accessToken, refreshToken, refreshTokenHash };
   }
 
-  private hashToken(token: string): string {
+  public hashToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

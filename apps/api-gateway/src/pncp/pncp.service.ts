@@ -117,6 +117,10 @@ export class PncpService {
 
     return {
       data,
+      total,
+      pagina,
+      limite,
+      totalPaginas: Math.ceil(total / limite),
       meta: {
         total,
         pagina,
@@ -276,6 +280,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }
@@ -338,6 +343,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }
@@ -381,6 +387,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }
@@ -411,6 +418,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }
@@ -452,6 +460,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }
@@ -503,6 +512,7 @@ export class PncpService {
 
     return {
       data,
+      total, pagina, limite, totalPaginas: Math.ceil(total / limite),
       meta: { total, pagina, limite, totalPaginas: Math.ceil(total / limite) },
     };
   }

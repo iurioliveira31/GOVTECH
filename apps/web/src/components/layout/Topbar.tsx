@@ -1,10 +1,26 @@
 'use client';
 
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent } from 'react';
+
 interface TopbarProps {
   onMenuToggle?: () => void;
 }
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultSearch = searchParams.get('q') || '';
+
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const q = formData.get('q');
+    if (q) {
+      router.push(`/busca?q=${encodeURIComponent(q.toString())}`);
+    }
+  };
+
   return (
     <header className="app-topbar">
       {/* Hamburguer - visível apenas mobile */}
@@ -30,15 +46,21 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
       )}
 
       {/* Search */}
-      <div className="input-icon-wrapper" style={{ flex: 1, maxWidth: 480 }}>
+      <form 
+        className="input-icon-wrapper" 
+        style={{ flex: 1, maxWidth: 480 }}
+        onSubmit={handleSearch}
+      >
         <span className="input-icon" style={{ fontSize: 14 }}>🔍</span>
         <input
+          name="q"
           type="search"
           className="input"
           placeholder="Buscar licitações, contratos, fornecedores..."
           style={{ height: 36 }}
+          defaultValue={defaultSearch}
         />
-      </div>
+      </form>
 
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
         {/* Notifications */}
