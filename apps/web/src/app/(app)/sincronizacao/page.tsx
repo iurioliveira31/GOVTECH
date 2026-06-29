@@ -112,7 +112,7 @@ export default function SincronizacaoPage() {
                     <td key={j}><div className="skeleton" style={{ height: 16 }} /></td>
                   ))}</tr>
                 ))
-              ) : data?.recentes?.length === 0 ? (
+              ) : data?.ultimosSyncs?.length === 0 ? (
                 <tr><td colSpan={7}>
                   <div className="empty-state">
                     <div className="empty-icon">🔄</div>
@@ -121,7 +121,7 @@ export default function SincronizacaoPage() {
                   </div>
                 </td></tr>
               ) : (
-                (data?.recentes ?? []).map((item, i) => (
+                (data?.ultimosSyncs ?? []).map((item, i) => (
                   <tr key={i}>
                     <td>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
