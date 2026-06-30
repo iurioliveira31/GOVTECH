@@ -98,7 +98,7 @@ function SyncStatusCard() {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>Registros</div>
                     <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                      {item.registrosProcessados.toLocaleString('pt-BR')}
+                      {(item.registrosProcessados ?? 0).toLocaleString('pt-BR')}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

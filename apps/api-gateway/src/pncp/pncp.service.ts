@@ -557,6 +557,7 @@ export class PncpService {
           syncKey: true,
           status: true,
           totalRegistros: true,
+          registrosProcessados: true,
           registrosInseridos: true,
           registrosAtualizados: true,
           erros: true,
