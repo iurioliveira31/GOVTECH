@@ -395,7 +395,7 @@ export default function FornecedoresPage() {
                         {((filtros.pagina! - 1) * filtros.limite!) + i + 1}
                       </td>
                       <td style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
-                        {item.nome ?? '—'}
+                        {item.razaoSocial ?? '—'}
                       </td>
                       <td style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
                         {formatCnpj(item.ni)}
