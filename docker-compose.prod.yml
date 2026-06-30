@@ -62,6 +62,7 @@ services:
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_prod}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
     ports:
       - '4000:4000'
     depends_on:
