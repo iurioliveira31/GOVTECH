@@ -30,6 +30,7 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Build do projeto web
+ENV NODE_OPTIONS="--max-old-space-size=450"
 RUN npx turbo run build --filter=web...
 
 FROM base AS runner
