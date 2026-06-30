@@ -409,8 +409,8 @@ export default function FornecedoresPage() {
                         {item._count?.contratos?.toLocaleString('pt-BR') ?? '—'}
                       </td>
                       <td style={{ textAlign: 'right', fontSize: 'var(--font-size-sm)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {item.contratos?.[0]?.valorGlobal != null 
-                          ? formatCurrency(Number(item.contratos[0].valorGlobal)) 
+                        {item.valorTotalContratos != null 
+                          ? formatCurrency(item.valorTotalContratos) 
                           : '—'}
                       </td>
                       <td>
