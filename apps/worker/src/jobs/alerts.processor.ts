@@ -109,7 +109,7 @@ export class AlertsProcessor {
 
     if (totalFound > 0 && resp.items?.length) {
       const emailTo = alert.user.email;
-      const userName = alert.user.nome ?? 'Assinante';
+      const userName = alert.user.name ?? 'Assinante';
       const alertName = alert.name;
 
       Logger.info(`[Alerts] Enviando notificações para ${emailTo} - ${totalFound} novos matches no alerta "${alertName}"`);
