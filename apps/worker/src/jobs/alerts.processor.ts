@@ -208,28 +208,46 @@ export class AlertsProcessor {
       }
 
       // ── 2. Enviar WhatsApp (Mock ou Integração) ──────────────────────────────
-      // O número de telefone pode ser extraído do objeto de usuário caso o schema/cadastro o armazene.
-      // Caso contrário, usamos o número cadastrado no perfil ou mock.
+      // ── 2. Enviar WhatsApp ──────────────────────────────
       const userPhone = (alert.user as any).telefone ?? '';
       const whatsappMsg = `*LicitaAI - Alerta Ativo* 🎯\n\nOlá, *${userName}*!\n\nSeu alerta de busca *"${alertName}"* encontrou *${totalFound}* novos resultados hoje!\n\n🔍 Palavras-chave: ${alert.keywords.join(', ')}\n\nClique no link abaixo para conferir a lista no seu painel:\n${FRONTEND_URL}/busca?q=${encodeURIComponent(query)}`;
 
-      if (userPhone && process.env.WHATSAPP_API_URL && process.env.WHATSAPP_API_KEY) {
+      if (userPhone && process.env.WHATSAPP_API_URL) {
         try {
-          const waResponse = await fetch(process.env.WHATSAPP_API_URL, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${process.env.WHATSAPP_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              number: userPhone.replace(/\D/g, ''),
-              message: whatsappMsg,
-            }),
-          });
-          if (waResponse.ok) {
-            Logger.info(`[Alerts] Mensagem de WhatsApp enviada para ${userPhone}`);
+          const cleanPhone = userPhone.replace(/\D/g, '');
+          const provider = process.env.WHATSAPP_PROVIDER || 'evolution';
+          let endpoint = process.env.WHATSAPP_API_URL;
+          let body = {};
+          let headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+          };
+
+          if (provider === 'evolution') {
+            headers['apikey'] = process.env.WHATSAPP_API_KEY || '';
+            body = {
+              number: cleanPhone,
+              options: { delay: 1200 },
+              textMessage: { text: whatsappMsg }
+            };
+          } else if (provider === 'zapi') {
+            headers['Client-Token'] = process.env.WHATSAPP_API_KEY || '';
+            body = { phone: cleanPhone, message: whatsappMsg };
           } else {
-            Logger.error(`[Alerts] Falha ao enviar WhatsApp: status ${waResponse.status}`);
+            headers['Authorization'] = `Bearer ${process.env.WHATSAPP_API_KEY}`;
+            body = { number: cleanPhone, message: whatsappMsg };
+          }
+
+          const waResponse = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+          });
+
+          if (waResponse.ok) {
+            Logger.info(`[Alerts] Mensagem de WhatsApp enviada para ${userPhone} via ${provider}`);
+          } else {
+            const respText = await waResponse.text();
+            Logger.error(`[Alerts] Falha ao enviar WhatsApp (${provider}): status ${waResponse.status} - ${respText}`);
           }
         } catch (err: any) {
           Logger.error(`[Alerts] Erro ao enviar WhatsApp de alerta: ${err.message}`);

@@ -19,6 +19,8 @@ const PRICE_IDS: Record<string, string> = {
   PRO_ANNUAL:       process.env.STRIPE_PRICE_PRO_ANNUAL        ?? 'price_pro_annual_placeholder',
 };
 
+import Stripe from 'stripe';
+
 // ── Stub do Stripe (substitua por import real quando tiver as chaves) ────────
 const stripeMock = {
   customers: {
@@ -53,6 +55,15 @@ const stripeMock = {
       return JSON.parse(payload.toString());
     },
   },
+};
+
+const getStripeClient = () => {
+  if (process.env.STRIPE_SECRET_KEY) {
+    return new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    }) as any;
+  }
+  return stripeMock;
 };
 
 @Injectable()
@@ -139,14 +150,15 @@ export class SubscriptionsService {
       const priceId = PRICE_IDS[dto.planChoice];
       if (!priceId) throw new BadRequestException('Plano inválido.');
 
-      const customers = await stripeMock.customers.list({ email: user.email });
+      const stripeClient = getStripeClient();
+      const customers = await stripeClient.customers.list({ email: user.email });
       let customerId = customers.data[0]?.id;
       if (!customerId) {
-        const customer = await stripeMock.customers.create({ email: user.email, name: dto.name });
+        const customer = await stripeClient.customers.create({ email: user.email, name: dto.name });
         customerId = customer.id;
       }
 
-      const session = await stripeMock.checkout.sessions.create({
+      const session = await stripeClient.checkout.sessions.create({
         customer: customerId,
         mode: 'subscription',
         line_items: [{ price: priceId, quantity: 1 }],
@@ -250,16 +262,17 @@ export class SubscriptionsService {
 
     // Buscar ou criar customer no Stripe
     let customerId = user.subscription?.stripeCustomerId;
+    const stripeClient = getStripeClient();
     if (!customerId) {
-      const customers = await stripeMock.customers.list({ email: user.email });
+      const customers = await stripeClient.customers.list({ email: user.email });
       customerId = customers.data[0]?.id;
       if (!customerId) {
-        const customer = await stripeMock.customers.create({ email: user.email, name: user.name });
+        const customer = await stripeClient.customers.create({ email: user.email, name: user.name });
         customerId = customer.id;
       }
     }
 
-    const session = await stripeMock.checkout.sessions.create({
+    const session = await stripeClient.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
@@ -276,7 +289,8 @@ export class SubscriptionsService {
     const sub = await this.prisma.subscription.findUnique({ where: { userId } });
     if (!sub?.stripeCustomerId) throw new NotFoundException('Nenhuma assinatura Stripe encontrada.');
 
-    const session = await stripeMock.billingPortal.sessions.create({
+    const stripeClient = getStripeClient();
+    const session = await stripeClient.billingPortal.sessions.create({
       customer: sub.stripeCustomerId,
       return_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/conta`,
     });
@@ -287,10 +301,11 @@ export class SubscriptionsService {
   // ── 5. Webhook Stripe ────────────────────────────────────────────────────
   async handleWebhook(payload: Buffer, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? '';
+    const stripeClient = getStripeClient();
 
     let event: any;
     try {
-      event = stripeMock.webhooks.constructEvent(payload, signature, webhookSecret);
+      event = stripeClient.webhooks.constructEvent(payload, signature, webhookSecret);
     } catch {
       throw new BadRequestException('Assinatura do webhook inválida.');
     }

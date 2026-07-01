@@ -538,7 +538,21 @@ export class PncpService {
       },
     });
     if (!fornecedor) throw new NotFoundException('Fornecedor não encontrado');
-    return fornecedor;
+
+    // Enriquecimento Receita Federal (BrasilAPI)
+    let receitaFederal = null;
+    if (niClean.length === 14) {
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${niClean}`);
+        if (res.ok) {
+          receitaFederal = await res.json();
+        }
+      } catch (err) {
+        // Ignora erros para não derrubar a rota
+      }
+    }
+
+    return { ...fornecedor, receitaFederal };
   }
 
   // ──────────────────────────────────────────────────────────────
