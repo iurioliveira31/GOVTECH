@@ -78,7 +78,11 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">L</div>
+          <div className="sidebar-logo-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L4.5 13.5H11.5L10 22L19.5 10.5H12.5L13 2Z" fill="white" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" strokeLinejoin="round"/>
+            </svg>
+          </div>
           <div style={{ flex: 1 }}>
             <div className="sidebar-logo-text">LicitaAI</div>
             <div className="sidebar-logo-sub">GovTech Platform</div>
@@ -120,11 +124,13 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         <div className="sidebar-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
             <div style={{
-              width: 32, height: 32,
+              width: 34, height: 34,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--color-brand-600), var(--color-brand-400))',
+              background: 'linear-gradient(135deg, var(--color-brand-700), var(--color-brand-500))',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '13px', fontWeight: 700, color: 'white', flexShrink: 0,
+              boxShadow: '0 0 12px rgba(59,130,246,0.3), 0 2px 6px rgba(0,0,0,0.3)',
+              border: '1px solid rgba(59,130,246,0.3)',
             }}>
               {user?.nome?.charAt(0)?.toUpperCase() ?? 'U'}
             </div>
@@ -133,11 +139,12 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
                 fontSize: 'var(--font-size-sm)', fontWeight: 600,
                 color: 'var(--color-text-primary)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                letterSpacing: '-0.01em',
               }}>
                 {user?.nome ?? 'Usuário'}
               </div>
               <div style={{
-                fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)',
+                fontSize: 'var(--font-size-xs)', color: 'rgba(148,163,184,0.6)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {user?.email ?? ''}
@@ -150,9 +157,13 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
             style={{
               width: '100%', justifyContent: 'flex-start',
               fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-danger)',
+              color: 'rgba(239,68,68,0.7)',
               gap: 'var(--space-2)',
+              borderRadius: 'var(--radius-md)',
+              transition: 'all var(--transition-base)',
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--color-danger)'; (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.08)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(239,68,68,0.7)'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
           >
             <span>↩</span>
             Sair
