@@ -37,9 +37,9 @@ const navItems = [
     links: [
       { href: '/analise',       label: 'Análise IA',      icon: '🤖' },
       { href: '/sincronizacao', label: 'Sincronização',   icon: '🔄' },
+      { href: '/conta',         label: 'Minha Conta',     icon: '👤' },
     ],
   },
-
 ];
 
 interface SidebarProps {
