@@ -169,7 +169,7 @@ export default function LicitacaoDetailPage() {
             </div>
             <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <a
-                href={`https://pncp.gov.br/app/editais/${item.orgaoCnpj}/${new Date(item.dataPublicacaoPncp ?? '').getFullYear()}/${item.numeroControlePncp?.split('-').pop()}`}
+                href={`https://pncp.gov.br/app/editais/${item.orgaoCnpj}/${item.anoCompra}/${item.sequencialCompra}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"

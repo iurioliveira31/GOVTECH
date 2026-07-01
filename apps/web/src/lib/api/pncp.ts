@@ -13,6 +13,8 @@ export interface PaginatedResponse<T> {
 export interface Contratacao {
   id: string;
   numeroControlePncp: string;
+  anoCompra?: number;
+  sequencialCompra?: number;
   objetoCompra?: string;
   modalidadeNome?: string;
   situacao?: string;
