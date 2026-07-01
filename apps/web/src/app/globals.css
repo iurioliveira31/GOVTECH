@@ -262,7 +262,7 @@ input, textarea, select {
 
 .app-sidebar {
   width: var(--sidebar-width);
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--color-bg-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
@@ -371,11 +371,25 @@ input, textarea, select {
 
 .sidebar-nav {
   flex: 1;
+  min-height: 0;
   padding: var(--space-4) var(--space-3);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(148,163,184,0.1);
+  border-radius: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(148,163,184,0.2);
 }
 
 .sidebar-section-label {
