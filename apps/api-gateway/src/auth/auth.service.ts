@@ -192,6 +192,7 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
+        telefone: true,
         role: true,
         tenantId: true,
         isActive: true,
@@ -208,6 +209,47 @@ export class AuthService {
       id: user.id,
       email: user.email,
       nome: user.name,
+      telefone: user.telefone,
+      role: user.role,
+      tenantId: user.tenantId,
+      tenant: user.tenant,
+      isActive: user.isActive,
+      mfaEnabled: user.mfaEnabled,
+      lastLoginAt: user.lastLoginAt,
+      memberSince: user.createdAt,
+    };
+  }
+
+  async updateMe(userId: string, dto: import('./dto/auth.dto').UpdateMeDto) {
+    const updateData: any = {};
+    if (dto.nome !== undefined) updateData.name = dto.nome;
+    if (dto.telefone !== undefined) updateData.telefone = dto.telefone;
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        telefone: true,
+        role: true,
+        tenantId: true,
+        isActive: true,
+        mfaEnabled: true,
+        lastLoginAt: true,
+        createdAt: true,
+        tenant: {
+          select: { id: true, name: true, slug: true, status: true },
+        },
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      nome: user.name,
+      telefone: user.telefone,
       role: user.role,
       tenantId: user.tenantId,
       tenant: user.tenant,

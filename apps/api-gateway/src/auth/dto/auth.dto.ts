@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsEmail({}, { message: 'Email inválido' })
@@ -13,3 +13,14 @@ export class RefreshDto {
   @IsString()
   refreshToken!: string;
 }
+
+export class UpdateMeDto {
+  @IsOptional()
+  @IsString()
+  nome?: string;
+
+  @IsOptional()
+  @IsString()
+  telefone?: string;
+}
+

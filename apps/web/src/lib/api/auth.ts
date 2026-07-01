@@ -78,6 +78,11 @@ export const authApi = {
     return data;
   },
 
+  updateMe: async (payload: { nome?: string; telefone?: string }) => {
+    const { data } = await apiClient.put('/auth/me', payload);
+    return data;
+  },
+
   forgotPassword: async (email: string): Promise<void> => {
     await apiClient.post('/auth/forgot-password', { email });
   },

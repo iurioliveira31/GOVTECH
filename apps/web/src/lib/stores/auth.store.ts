@@ -7,6 +7,7 @@ interface AuthUser {
   id: string;
   email: string;
   nome: string;
+  telefone?: string;
   role: string;
   tenantId: string;
 }
@@ -32,6 +33,7 @@ interface AuthState {
   isAuthenticated: () => boolean;
   setSubscription: (sub: SubscriptionInfo | null) => void;
   setUserAndTokens: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  updateUser: (data: Partial<AuthUser>) => void;
   dismissTrialBanner: () => void;
 }
 
@@ -78,6 +80,13 @@ export const useAuthStore = create<AuthState>()(
         localStorage.setItem('refresh_token', refreshToken);
         setCookie('access_token', accessToken, 1);
         set({ user });
+      },
+
+      updateUser: (data) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, ...data } });
+        }
       },
 
       dismissTrialBanner: () => {
