@@ -17,8 +17,8 @@ import {
 
 const BASE_URL = process.env.PNCP_BASE_URL ?? 'https://pncp.gov.br/api/consulta';
 const DEFAULT_PAGE_SIZE = Number(process.env.PNCP_PAGE_SIZE ?? '500');
-const REQUEST_DELAY_MS = Number(process.env.PNCP_REQUEST_DELAY_MS ?? '300');
-const MAX_RETRIES = Number(process.env.PNCP_MAX_RETRIES ?? '3');
+const REQUEST_DELAY_MS = Number(process.env.PNCP_REQUEST_DELAY_MS ?? '1000');
+const MAX_RETRIES = Number(process.env.PNCP_MAX_RETRIES ?? '5');
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,7 +30,7 @@ export class PncpApiClient {
   constructor() {
     this.http = axios.create({
       baseURL: BASE_URL,
-      timeout: 60_000,
+      timeout: 90_000,
       headers: {
         Accept: 'application/json',
         'User-Agent': 'Aplicativo-PNCP-Sync/1.0',
@@ -45,12 +45,18 @@ export class PncpApiClient {
         if (retryAfter) {
           return Number(retryAfter) * 1000;
         }
-        // Backoff exponencial: 1s, 2s, 4s
-        return axiosRetry.exponentialDelay(retryCount);
+        // Para 429 (Too Many Requests): backoff mais longo (30s, 60s, 120s, 240s, 300s)
+        if (error.response?.status === 429) {
+          const delay = Math.min(30_000 * Math.pow(2, retryCount - 1), 300_000);
+          return delay;
+        }
+        // Para erros de rede/timeout: backoff exponencial mais suave (5s, 10s, 20s...)
+        return Math.min(5_000 * Math.pow(2, retryCount - 1), 60_000);
       },
       retryCondition: (error: AxiosError) => {
-        // Retry em 429, 500, 502, 503, 504 e erros de rede
+        // Retry em 429, 500, 502, 503, 504 e erros de rede/timeout
         if (axiosRetry.isNetworkError(error)) return true;
+        if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') return true;
         const status = error.response?.status;
         return !!status && [429, 500, 502, 503, 504].includes(status);
       },

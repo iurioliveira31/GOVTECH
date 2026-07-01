@@ -62,9 +62,9 @@ export class PncpSyncProcessor {
       async (job: Job) => this.process(job),
       {
         connection,
-        concurrency: Number(process.env.PNCP_WORKER_CONCURRENCY ?? '2'),
+        concurrency: Number(process.env.PNCP_WORKER_CONCURRENCY ?? '1'),
         limiter: {
-          max: Number(process.env.PNCP_WORKER_RATE_MAX ?? '5'),
+          max: Number(process.env.PNCP_WORKER_RATE_MAX ?? '2'),
           duration: Number(process.env.PNCP_WORKER_RATE_DURATION ?? '1000'),
         },
       },
