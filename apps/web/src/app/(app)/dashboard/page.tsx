@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { pncpApi } from '@/lib/api/pncp';
 import { formatCompact, formatCurrency } from '@/lib/utils/format';
+import { useAuthStore } from '@/lib/stores/auth.store';
 
 
 // Dados mockados para desenvolvimento (substitua por chamada real)
@@ -47,9 +48,11 @@ function MetricCard({ label, value, change, changePositive, color = '#3b82f6', i
 }
 
 function SyncStatusCard() {
+  const user = useAuthStore((s) => s.user);
   const { data, isLoading } = useQuery({
     queryKey: ['sync-status'],
     queryFn: () => pncpApi.statusSync(),
+    enabled: !!user, // só dispara quando o usuário estiver autenticado no Zustand
     refetchInterval: 60_000,
   });
 

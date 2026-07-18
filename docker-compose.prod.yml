@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,6 +13,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   redis:
     image: redis:7-alpine
@@ -27,6 +35,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.15'
+          memory: 64M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.2
@@ -36,7 +54,7 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
-      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m' # Reduzido para caber no servidor Micro
+      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -47,6 +65,16 @@ services:
       timeout: 10s
       retries: 5
       start_period: 300s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.35'
+          memory: 350M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   api-gateway:
     build:
@@ -56,13 +84,18 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=public&connection_limit=30
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_prod_password}@redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=onboarding@resend.dev
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_prod}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=LicitaAI_SecretKey_123!
+      - EVOLUTION_INSTANCE_NAME=LicitaAI
     ports:
       - '4000:4000'
     depends_on:
@@ -70,6 +103,16 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   worker:
     build:
@@ -78,11 +121,18 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=public&connection_limit=30
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_prod_password}@redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=onboarding@resend.dev
+      - WHATSAPP_PROVIDER=evolution
+      - WHATSAPP_API_URL=http://evolution-api:8080/message/sendText/LicitaAI
+      - WHATSAPP_API_KEY=LicitaAI_SecretKey_123!
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-configure_gemini_api_key_aqui}
+      - PNCP_PAGE_SIZE=50
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,6 +140,16 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.30'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   web:
     build:
@@ -101,13 +161,81 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1 # Em produção real, aponte para seu domínio
+      - NEXT_PUBLIC_API_URL=http://137.131.227.255:4000/api/v1
     ports:
       - '3000:3000'
     depends_on:
       - api-gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    restart: always
+    environment:
+      - SERVER_URL=http://evolution-api:8080
+      - DOCKER_ENV=true
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=evolution_api
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aplicativo_prod}?schema=evolution_api
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://:${REDIS_PASSWORD:-redis_prod_password}@redis:6379/6
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - LOG_LEVEL=ERROR
+      - AUTHENTICATION_API_KEY=LicitaAI_SecretKey_123!
+      - AUTHENTICATION_TYPE=apikey
+    volumes:
+      - evolution-instances:/evolution/instances
+      - evolution-store:/evolution/store
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 256M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  bullboard:
+    image: deadly0/bull-board:latest
+    restart: always
+    ports:
+      - '3001:3000'
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_prod_password}
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
 
 volumes:
   postgres-data:
   redis-data:
   es-data:
+  evolution-instances:
+  evolution-store:

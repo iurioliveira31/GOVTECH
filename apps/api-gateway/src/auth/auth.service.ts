@@ -185,26 +185,25 @@ export class AuthService {
   // Me — perfil do usuário autenticado
   // ──────────────────────────────────────────────────────────────────────────
 
-  async me(userId: string) {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        telefone: true,
-        role: true,
-        tenantId: true,
-        isActive: true,
-        mfaEnabled: true,
-        lastLoginAt: true,
-        createdAt: true,
-        tenant: {
-          select: { id: true, name: true, slug: true, status: true },
-        },
+  private get userProfileSelect() {
+    return {
+      id: true,
+      email: true,
+      name: true,
+      telefone: true,
+      role: true,
+      tenantId: true,
+      isActive: true,
+      mfaEnabled: true,
+      lastLoginAt: true,
+      createdAt: true,
+      tenant: {
+        select: { id: true, name: true, slug: true, status: true },
       },
-    });
+    };
+  }
 
+  private mapUserToProfile(user: any) {
     return {
       id: user.id,
       email: user.email,
@@ -220,6 +219,15 @@ export class AuthService {
     };
   }
 
+  async me(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: this.userProfileSelect,
+    });
+
+    return this.mapUserToProfile(user);
+  }
+
   async updateMe(userId: string, dto: import('./dto/auth.dto').UpdateMeDto) {
     const updateData: any = {};
     if (dto.nome !== undefined) updateData.name = dto.nome;
@@ -228,36 +236,10 @@ export class AuthService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        telefone: true,
-        role: true,
-        tenantId: true,
-        isActive: true,
-        mfaEnabled: true,
-        lastLoginAt: true,
-        createdAt: true,
-        tenant: {
-          select: { id: true, name: true, slug: true, status: true },
-        },
-      },
+      select: this.userProfileSelect,
     });
 
-    return {
-      id: user.id,
-      email: user.email,
-      nome: user.name,
-      telefone: user.telefone,
-      role: user.role,
-      tenantId: user.tenantId,
-      tenant: user.tenant,
-      isActive: user.isActive,
-      mfaEnabled: user.mfaEnabled,
-      lastLoginAt: user.lastLoginAt,
-      memberSince: user.createdAt,
-    };
+    return this.mapUserToProfile(user);
   }
 
   // ──────────────────────────────────────────────────────────────────────────

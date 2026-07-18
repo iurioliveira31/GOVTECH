@@ -87,7 +87,7 @@ export class SyncOrchestrator {
               dataFinal: formatPncpDate(janela.fim),
               codigoModalidadeContratacao: modalidade,
               pagina,
-              tamanhoPagina: 500,
+              tamanhoPagina: 50,
             });
 
             if (resp.empty || !resp.data?.length) break;
@@ -181,7 +181,7 @@ export class SyncOrchestrator {
             dataInicial: formatPncpDate(janela.inicio),
             dataFinal: formatPncpDate(janela.fim),
             pagina,
-            tamanhoPagina: 500,
+            tamanhoPagina: 50,
           });
 
           if (resp.empty || !resp.data?.length) break;
@@ -245,7 +245,7 @@ export class SyncOrchestrator {
             dataInicial: formatPncpDate(janela.inicio),
             dataFinal: formatPncpDate(janela.fim),
             pagina,
-            tamanhoPagina: 500,
+            tamanhoPagina: 50,
           });
 
           if (resp.empty || !resp.data?.length) break;
@@ -297,7 +297,7 @@ export class SyncOrchestrator {
         const resp = await this.pncp.consultarItensPca({
           anoPca: ano,
           pagina,
-          tamanhoPagina: 500,
+          tamanhoPagina: 50,
         });
 
         if (resp.empty || !resp.data?.length) break;
@@ -350,7 +350,7 @@ export class SyncOrchestrator {
     const cursorContratacao = await this.stateManager.getCursor('CONTRATACAO');
     const inicioContratacao = cursorContratacao
       ? new Date(Math.max(cursorContratacao.getTime(), ontem.getTime() - 30 * 86400_000))
-      : new Date(hoje.getFullYear(), hoje.getMonth(), 1); // primeiro dia do mês se sem cursor
+      : new Date(ontem.getTime() - 30 * 86400_000);
 
     results.contratacoes = await this.syncContratacoes(inicioContratacao, ontem, opts);
 
@@ -358,7 +358,7 @@ export class SyncOrchestrator {
     const cursorContrato = await this.stateManager.getCursor('CONTRATO');
     const inicioContrato = cursorContrato
       ? new Date(Math.max(cursorContrato.getTime(), ontem.getTime() - 30 * 86400_000))
-      : new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      : new Date(ontem.getTime() - 30 * 86400_000);
 
     results.contratos = await this.syncContratos(inicioContrato, ontem, opts);
 
@@ -366,7 +366,7 @@ export class SyncOrchestrator {
     const cursorAta = await this.stateManager.getCursor('ATA');
     const inicioAta = cursorAta
       ? new Date(Math.max(cursorAta.getTime(), ontem.getTime() - 60 * 86400_000))
-      : new Date(hoje.getFullYear(), 0, 1);
+      : new Date(ontem.getTime() - 60 * 86400_000);
 
     results.atas = await this.syncAtas(inicioAta, ontem, opts);
 

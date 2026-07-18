@@ -1,8 +1,10 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -50,6 +52,10 @@ async function bootstrap() {
       },
     }),
   );
+
+  // ── Filtros e Interceptors Globais ─────────────────────────────────────────
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor(app.get(Reflector)));
 
   // ── Prefixo global da API ─────────────────────────────────────────────────
   app.setGlobalPrefix('api/v1');

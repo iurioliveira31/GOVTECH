@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 // Rotas completamente públicas — sem nenhuma verificação
 const PUBLIC_PATHS = [
+  '/',
   '/login',
   '/cadastro',
   '/recuperar-senha',

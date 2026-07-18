@@ -6,6 +6,8 @@ import { ElasticsearchProcessor } from './jobs/elasticsearch.processor';
 import { AlertsProcessor } from './jobs/alerts.processor';
 import { ExpireTrialsProcessor } from './jobs/expire-trials.processor';
 import { ComprasGovSyncProcessor } from './jobs/comprasgov-sync.processor';
+import { SesResolutionsProcessor } from './jobs/ses-resolutions.processor';
+import { IofResolutionsProcessor } from './jobs/iof-resolutions.processor';
 import { SearchService, ElasticsearchClientService } from '@aplicativo/search';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -28,6 +30,7 @@ async function bootstrap() {
   let alertsProcessor: AlertsProcessor | null = null;
   let expireTrialsProcessor: ExpireTrialsProcessor | null = null;
   let comprasGovProcessor: ComprasGovSyncProcessor | null = null;
+  let iofProcessor: IofResolutionsProcessor | null = null;
 
   try {
     const mockConfig = { get: (key: string, def: string) => process.env[key] || def };
@@ -37,9 +40,10 @@ async function bootstrap() {
     esProcessor = new ElasticsearchProcessor(prisma);
     await esProcessor.start();
 
-    pncpProcessor = new PncpSyncProcessor(prisma, esProcessor);
-    await pncpProcessor.start();
-    await pncpProcessor.registrarJobsRecorrentes();
+    // PNCP e ComprasGov pausados para priorizar Resoluções
+    // pncpProcessor = new PncpSyncProcessor(prisma, esProcessor);
+    // await pncpProcessor.start();
+    // await pncpProcessor.registrarJobsRecorrentes();
 
     alertsProcessor = new AlertsProcessor(prisma, searchService);
     await alertsProcessor.start();
@@ -49,15 +53,25 @@ async function bootstrap() {
     await expireTrialsProcessor.start();
     await expireTrialsProcessor.registrarJobRecorrente();
 
-    comprasGovProcessor = new ComprasGovSyncProcessor(prisma);
-    await comprasGovProcessor.start();
-    await comprasGovProcessor.registrarJobsRecorrentes();
+    // comprasGovProcessor = new ComprasGovSyncProcessor(prisma);
+    // await comprasGovProcessor.start();
+    // await comprasGovProcessor.registrarJobsRecorrentes();
 
     // Se variável de ambiente indicar, dispara sync imediato na inicialização
-    if (process.env.PNCP_SYNC_ON_START === 'true') {
-      Logger.info('PNCP_SYNC_ON_START=true — enfileirando sync incremental inicial');
-      await pncpProcessor.enqueueIncremental(false);
-    }
+    // if (process.env.PNCP_SYNC_ON_START === 'true') {
+    //   Logger.info('PNCP_SYNC_ON_START=true — enfileirando sync incremental inicial');
+    //   await pncpProcessor.enqueueIncremental(false);
+    // }
+
+    const sesProcessor = new SesResolutionsProcessor(prisma);
+    await sesProcessor.start();
+    await sesProcessor.registrarJobsRecorrentes();
+    // Para testar na hora que liga o worker, vamos forçar um sync manual
+    // await sesProcessor.enqueueManualSync();
+
+    iofProcessor = new IofResolutionsProcessor(prisma);
+    await iofProcessor.start();
+    await iofProcessor.registrarJobsRecorrentes();
 
     Logger.info('PNCP Sync Processor inicializado com jobs recorrentes');
   } catch (err: any) {
@@ -74,11 +88,11 @@ async function bootstrap() {
   // ── Graceful shutdown ─────────────────────────────────────────
   const shutdown = async (signal: string) => {
     Logger.info(`Recebido ${signal} — encerrando worker graciosamente`);
-    await pncpProcessor?.close();
+    // await pncpProcessor?.close();
     await esProcessor?.close();
     await alertsProcessor?.close();
     await expireTrialsProcessor?.close();
-    await comprasGovProcessor?.close();
+    // await comprasGovProcessor?.close();
     await prisma.$disconnect();
     process.exit(0);
   };

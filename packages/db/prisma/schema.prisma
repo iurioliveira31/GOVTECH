@@ -62,62 +62,63 @@ enum AnalyticsEventType {
 }
 
 model Tenant {
-  id                 String                  @id @default(cuid())
-  name               String
-  slug               String                  @unique
-  domain             String?                 @unique
-  status             String                  @default("ACTIVE")
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  users              User[]
-  procurements       Procurement[]
-  contracts          Contract[]
-  aiAnalyses         AIAnalysis[]
-  billingAccount     BillingAccount?
-  crmAccounts        CrmAccount[]
-  crmActivities      CrmActivity[]
-  analyticsEvents    AnalyticsEvent[]
-  logs               AuditLog[]
-  refreshTokens      RefreshToken[]
+  id                  String               @id @default(cuid())
+  name                String
+  slug                String               @unique
+  domain              String?              @unique
+  status              String               @default("ACTIVE")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  users               User[]
+  procurements        Procurement[]
+  contracts           Contract[]
+  aiAnalyses          AIAnalysis[]
+  billingAccount      BillingAccount?
+  crmAccounts         CrmAccount[]
+  crmActivities       CrmActivity[]
+  analyticsEvents     AnalyticsEvent[]
+  logs                AuditLog[]
+  refreshTokens       RefreshToken[]
   paymentTransactions PaymentTransaction[]
-  searchIndices      SearchIndex[]
+  searchIndices       SearchIndex[]
 
   @@index([createdAt])
 }
 
 model User {
-  id                 String                   @id @default(cuid())
-  tenant             Tenant                   @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  email              String                   @unique
-  name               String
-  password           String
-  role               TenantRole               @default(USER)
-  isActive           Boolean                  @default(true)
-  mfaEnabled         Boolean                  @default(false)
-  mfaSecret          String?
-  mfaVerifiedAt      DateTime?
-  lastLoginAt        DateTime?
+  id                    String                 @id @default(cuid())
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id])
+  tenantId              String
+  email                 String                 @unique
+  name                  String
+  password              String
+  role                  TenantRole             @default(USER)
+  isActive              Boolean                @default(true)
+  mfaEnabled            Boolean                @default(false)
+  mfaSecret             String?
+  mfaVerifiedAt         DateTime?
+  lastLoginAt           DateTime?
   /// CNPJ da empresa do usuário (usado para verificar trial único por empresa)
-  cnpj               String?
+  cnpj                  String?
   /// Quando o usuário confirmou o e-mail (null = não confirmado)
-  emailVerifiedAt    DateTime?
+  emailVerifiedAt       DateTime?
   /// URL do avatar do usuário
-  avatarUrl          String?
+  avatarUrl             String?
   /// Telefone do usuário (para WhatsApp)
-  telefone           String?
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
-  sessions           UserSession[]
-  refreshTokens      RefreshToken[]
-  auditLogs          AuditLog[]
-  crmActivities      CrmActivity[]
-  createdProcurements Procurement[]
-  analyticsEvents    AnalyticsEvent[]
-  favorites          Favorite[]
-  alerts             Alert[]
-  subscription       Subscription?
-  passwordResetTokens PasswordResetToken[]
+  telefone              String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  sessions              UserSession[]
+  refreshTokens         RefreshToken[]
+  auditLogs             AuditLog[]
+  crmActivities         CrmActivity[]
+  createdProcurements   Procurement[]
+  analyticsEvents       AnalyticsEvent[]
+  favorites             Favorite[]
+  alerts                Alert[]
+  resolutionAlerts      ResolutionAlert[]
+  subscription          Subscription?
+  passwordResetTokens   PasswordResetToken[]
   subscriptionAuditLogs SubscriptionAuditLog[]
 
   @@index([tenantId, role])
@@ -125,328 +126,338 @@ model User {
 }
 
 model RefreshToken {
-  id                 String    @id @default(cuid())
-  user               User      @relation(fields: [userId], references: [id])
-  userId             String
-  tenant             Tenant    @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  tokenHash          String
-  expiresAt          DateTime
-  createdAt          DateTime  @default(now())
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId, expiresAt])
+  @@index([tenantId])
 }
 
 model UserSession {
-  id                 String    @id @default(cuid())
-  user               User      @relation(fields: [userId], references: [id])
-  userId             String
-  token              String    @unique
-  expiresAt          DateTime
-  createdAt          DateTime  @default(now())
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId, expiresAt])
 }
 
 model Procurement {
-  id                 String               @id @default(cuid())
-  tenant             Tenant               @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  externalId         String               @unique
-  title              String
-  description        String               @db.Text
-  status             ProcurementStatus    @default(DRAFT)
-  agency             String
-  modality           String
-  estimatedValue     Decimal              @db.Decimal(24, 2)
-  publicationDate    DateTime
-  closingDate        DateTime
-  sourceUrl          String
-  createdBy          User?                @relation(fields: [createdById], references: [id])
-  createdById        String?
-  updatedAt          DateTime             @updatedAt
-  createdAt          DateTime             @default(now())
-  contracts          Contract[]
-  documents          ProcurementDocument[]
-  aiAnalyses         AIAnalysis[]
+  id              String                @id @default(cuid())
+  tenant          Tenant                @relation(fields: [tenantId], references: [id])
+  tenantId        String
+  externalId      String                @unique
+  title           String
+  description     String                @db.Text
+  status          ProcurementStatus     @default(DRAFT)
+  agency          String
+  modality        String
+  estimatedValue  Decimal               @db.Decimal(24, 2)
+  publicationDate DateTime
+  closingDate     DateTime
+  sourceUrl       String
+  createdBy       User?                 @relation(fields: [createdById], references: [id])
+  createdById     String?
+  updatedAt       DateTime              @updatedAt
+  createdAt       DateTime              @default(now())
+  contracts       Contract[]
+  documents       ProcurementDocument[]
+  aiAnalyses      AIAnalysis[]
 
   @@index([tenantId, status])
   @@index([tenantId, closingDate])
+  @@index([createdById])
 }
 
 model ProcurementDocument {
-  id                 String      @id @default(cuid())
-  procurement         Procurement @relation(fields: [procurementId], references: [id])
-  procurementId      String
-  filename           String
-  mimeType           String
-  url                String
-  checksum           String
-  createdAt          DateTime    @default(now())
+  id            String      @id @default(cuid())
+  procurement   Procurement @relation(fields: [procurementId], references: [id])
+  procurementId String
+  filename      String
+  mimeType      String
+  url           String
+  checksum      String
+  createdAt     DateTime    @default(now())
 
   @@index([procurementId])
 }
 
 model Contract {
-  id                 String          @id @default(cuid())
-  tenant             Tenant          @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  procurement        Procurement?    @relation(fields: [procurementId], references: [id])
-  procurementId      String?
-  supplierName       String
-  contractNumber     String          @unique
-  title              String
-  summary            String?         @db.Text
-  value              Decimal         @db.Decimal(24, 2)
-  startDate          DateTime
-  endDate            DateTime
-  status             ContractStatus  @default(ACTIVE)
-  sourceUrl          String
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  documents          ContractDocument[]
-  analyses           AIAnalysis[]
-  crmActivities      CrmActivity[]
+  id             String             @id @default(cuid())
+  tenant         Tenant             @relation(fields: [tenantId], references: [id])
+  tenantId       String
+  procurement    Procurement?       @relation(fields: [procurementId], references: [id])
+  procurementId  String?
+  supplierName   String
+  contractNumber String             @unique
+  title          String
+  summary        String?            @db.Text
+  value          Decimal            @db.Decimal(24, 2)
+  startDate      DateTime
+  endDate        DateTime
+  status         ContractStatus     @default(ACTIVE)
+  sourceUrl      String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  documents      ContractDocument[]
+  analyses       AIAnalysis[]
+  crmActivities  CrmActivity[]
 
   @@index([tenantId, status])
   @@index([tenantId, contractNumber])
+  @@index([procurementId])
 }
 
 model ContractDocument {
-  id                 String    @id @default(cuid())
-  contract           Contract  @relation(fields: [contractId], references: [id])
-  contractId         String
-  filename           String
-  mimeType           String
-  url                String
-  checksum           String
-  createdAt          DateTime  @default(now())
+  id         String   @id @default(cuid())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId String
+  filename   String
+  mimeType   String
+  url        String
+  checksum   String
+  createdAt  DateTime @default(now())
 
   @@index([contractId])
 }
 
 model AIAnalysis {
-  id                 String           @id @default(cuid())
-  tenant             Tenant           @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  contract           Contract?        @relation(fields: [contractId], references: [id])
-  contractId         String?
-  procurement        Procurement?     @relation(fields: [procurementId], references: [id])
-  procurementId      String?
-  requestType        String
-  prompt             String           @db.Text
-  status             AnalysisStatus   @default(PENDING)
-  resultSummary      String?          @db.Text
-  metadata           Json?
-  error              String?          @db.Text
-  startedAt          DateTime?
-  completedAt        DateTime?
-  createdAt          DateTime         @default(now())
-  embeddings         AIEmbedding[]
-  insights           AIInsight[]
+  id            String         @id @default(cuid())
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  tenantId      String
+  contract      Contract?      @relation(fields: [contractId], references: [id])
+  contractId    String?
+  procurement   Procurement?   @relation(fields: [procurementId], references: [id])
+  procurementId String?
+  requestType   String
+  prompt        String         @db.Text
+  status        AnalysisStatus @default(PENDING)
+  resultSummary String?        @db.Text
+  metadata      Json?
+  error         String?        @db.Text
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  embeddings    AIEmbedding[]
+  insights      AIInsight[]
 
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([contractId])
+  @@index([procurementId])
 }
 
 model AIEmbedding {
-  id                 String      @id @default(cuid())
-  analysis           AIAnalysis  @relation(fields: [analysisId], references: [id])
-  analysisId         String
-  vectorId           String      @unique
-  embedding          Bytes
-  sourceType         String
-  sourceId           String
-  createdAt          DateTime    @default(now())
+  id         String     @id @default(cuid())
+  analysis   AIAnalysis @relation(fields: [analysisId], references: [id])
+  analysisId String
+  vectorId   String     @unique
+  embedding  Bytes
+  sourceType String
+  sourceId   String
+  createdAt  DateTime   @default(now())
 
   @@index([analysisId])
 }
 
 model AIInsight {
-  id                 String      @id @default(cuid())
-  analysis           AIAnalysis  @relation(fields: [analysisId], references: [id])
-  analysisId         String
-  title              String
-  detail             String      @db.Text
-  category           String
-  confidence         Float?
-  createdAt          DateTime    @default(now())
+  id         String     @id @default(cuid())
+  analysis   AIAnalysis @relation(fields: [analysisId], references: [id])
+  analysisId String
+  title      String
+  detail     String     @db.Text
+  category   String
+  confidence Float?
+  createdAt  DateTime   @default(now())
 
   @@index([analysisId, category])
 }
 
 model AuditLog {
-  id                 String      @id @default(cuid())
-  tenant             Tenant      @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  user               User?       @relation(fields: [userId], references: [id])
-  userId             String?
-  entity             String
-  entityId           String
-  action             String
-  changes            Json?
-  ipAddress          String?
-  userAgent          String?
-  createdAt          DateTime    @default(now())
+  id        String   @id @default(cuid())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  entity    String
+  entityId  String
+  action    String
+  changes   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([tenantId, entity, entityId])
   @@index([tenantId, createdAt])
+  @@index([userId])
 }
 
 model BillingAccount {
-  id                 String          @id @default(cuid())
-  tenant             Tenant          @relation(fields: [tenantId], references: [id])
-  tenantId           String          @unique
-  planName           String
-  status             BillingStatus   @default(ACTIVE)
-  currency           String          @default("BRL")
-  nextBillingDate    DateTime
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  invoices           Invoice[]
-  usageRecords       BillingUsage[]
+  id              String         @id @default(cuid())
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  tenantId        String         @unique
+  planName        String
+  status          BillingStatus  @default(ACTIVE)
+  currency        String         @default("BRL")
+  nextBillingDate DateTime
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  invoices        Invoice[]
+  usageRecords    BillingUsage[]
 
   @@index([status])
 }
 
 model Invoice {
-  id                 String         @id @default(cuid())
-  billingAccount     BillingAccount @relation(fields: [billingAccountId], references: [id])
-  billingAccountId   String
-  invoiceNumber      String         @unique
-  amount             Decimal        @db.Decimal(24, 2)
-  dueDate            DateTime
-  paidAt             DateTime?
-  status             InvoiceStatus  @default(DRAFT)
-  metadata           Json?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id                  String               @id @default(cuid())
+  billingAccount      BillingAccount       @relation(fields: [billingAccountId], references: [id])
+  billingAccountId    String
+  invoiceNumber       String               @unique
+  amount              Decimal              @db.Decimal(24, 2)
+  dueDate             DateTime
+  paidAt              DateTime?
+  status              InvoiceStatus        @default(DRAFT)
+  metadata            Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   paymentTransactions PaymentTransaction[]
 
   @@index([billingAccountId, status])
 }
 
 model BillingUsage {
-  id                 String          @id @default(cuid())
-  billingAccount     BillingAccount  @relation(fields: [billingAccountId], references: [id])
-  billingAccountId   String
-  metricName         String
-  metricValue        Decimal         @db.Decimal(24, 4)
-  recordedAt         DateTime
-  createdAt          DateTime        @default(now())
+  id               String         @id @default(cuid())
+  billingAccount   BillingAccount @relation(fields: [billingAccountId], references: [id])
+  billingAccountId String
+  metricName       String
+  metricValue      Decimal        @db.Decimal(24, 4)
+  recordedAt       DateTime
+  createdAt        DateTime       @default(now())
 
   @@index([billingAccountId, metricName])
 }
 
 model PaymentTransaction {
-  id                 String          @id @default(cuid())
-  tenant             Tenant          @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  invoice            Invoice?        @relation(fields: [invoiceId], references: [id])
-  invoiceId          String?
-  provider           String
-  providerReference  String
-  amount             Decimal         @db.Decimal(24, 2)
-  currency           String          @default("BRL")
-  status             String
-  processedAt        DateTime?
-  createdAt          DateTime        @default(now())
+  id                String    @id @default(cuid())
+  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  tenantId          String
+  invoice           Invoice?  @relation(fields: [invoiceId], references: [id])
+  invoiceId         String?
+  provider          String
+  providerReference String
+  amount            Decimal   @db.Decimal(24, 2)
+  currency          String    @default("BRL")
+  status            String
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
 
   @@index([tenantId, provider, status])
+  @@index([invoiceId])
 }
 
 model CrmAccount {
-  id                 String      @id @default(cuid())
-  tenant             Tenant      @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  name               String
-  externalId         String?     @unique
-  industry           String?
-  website            String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  contacts           CrmContact[]
-  opportunities      CrmOpportunity[]
-  activities         CrmActivity[]
+  id            String           @id @default(cuid())
+  tenant        Tenant           @relation(fields: [tenantId], references: [id])
+  tenantId      String
+  name          String
+  externalId    String?          @unique
+  industry      String?
+  website       String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  contacts      CrmContact[]
+  opportunities CrmOpportunity[]
+  activities    CrmActivity[]
 
   @@index([tenantId, name])
 }
 
 model CrmContact {
-  id                 String      @id @default(cuid())
-  account            CrmAccount  @relation(fields: [accountId], references: [id])
-  accountId          String
-  name               String
-  email              String?
-  phone              String?
-  role               String?
-  createdAt          DateTime    @default(now())
+  id        String     @id @default(cuid())
+  account   CrmAccount @relation(fields: [accountId], references: [id])
+  accountId String
+  name      String
+  email     String?
+  phone     String?
+  role      String?
+  createdAt DateTime   @default(now())
 
   @@index([accountId, email])
 }
 
 model CrmOpportunity {
-  id                 String      @id @default(cuid())
-  account            CrmAccount  @relation(fields: [accountId], references: [id])
-  accountId          String
-  title              String
-  value              Decimal     @db.Decimal(24, 2)
-  stage              String
-  probability        Float?
-  closeDate          DateTime?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  id          String     @id @default(cuid())
+  account     CrmAccount @relation(fields: [accountId], references: [id])
+  accountId   String
+  title       String
+  value       Decimal    @db.Decimal(24, 2)
+  stage       String
+  probability Float?
+  closeDate   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@index([accountId, stage])
 }
 
 model CrmActivity {
-  id                 String      @id @default(cuid())
-  tenant             Tenant      @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  user               User?       @relation(fields: [userId], references: [id])
-  userId             String?
-  account            CrmAccount? @relation(fields: [accountId], references: [id])
-  accountId          String?
-  contract           Contract?   @relation(fields: [contractId], references: [id])
-  contractId         String?
-  title              String
-  type               String
-  notes              String?     @db.Text
-  dueDate            DateTime?
-  completedAt        DateTime?
-  createdAt          DateTime    @default(now())
+  id          String      @id @default(cuid())
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  user        User?       @relation(fields: [userId], references: [id])
+  userId      String?
+  account     CrmAccount? @relation(fields: [accountId], references: [id])
+  accountId   String?
+  contract    Contract?   @relation(fields: [contractId], references: [id])
+  contractId  String?
+  title       String
+  type        String
+  notes       String?     @db.Text
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime    @default(now())
 
   @@index([tenantId, userId, dueDate])
+  @@index([accountId])
+  @@index([contractId])
 }
 
 model AnalyticsEvent {
-  id                 String               @id @default(cuid())
-  tenant             Tenant               @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  user               User?                @relation(fields: [userId], references: [id])
-  userId             String?
-  type               AnalyticsEventType
-  entity             String?
-  entityId           String?
-  metadata           Json?
-  occurredAt         DateTime             @default(now())
+  id         String             @id @default(cuid())
+  tenant     Tenant             @relation(fields: [tenantId], references: [id])
+  tenantId   String
+  user       User?              @relation(fields: [userId], references: [id])
+  userId     String?
+  type       AnalyticsEventType
+  entity     String?
+  entityId   String?
+  metadata   Json?
+  occurredAt DateTime           @default(now())
 
   @@index([tenantId, type])
   @@index([tenantId, occurredAt])
+  @@index([userId])
 }
 
 /// Global indexes and optimization hints for query patterns
 
 model SearchIndex {
-  id                 String    @id @default(cuid())
-  tenant             Tenant    @relation(fields: [tenantId], references: [id])
-  tenantId           String
-  entity             String
-  entityId           String
-  content            String    @db.Text
-  vectorId           String    @unique
-  createdAt          DateTime  @default(now())
+  id        String   @id @default(cuid())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  entity    String
+  entityId  String
+  content   String   @db.Text
+  vectorId  String   @unique
+  createdAt DateTime @default(now())
 
   @@index([tenantId, entity])
 }
@@ -535,97 +546,97 @@ enum SyncEntityType {
 }
 
 model PncpOrgao {
-  id             String      @id @default(cuid())
-  cnpj           String      @unique
-  razaoSocial    String
-  poderId        PncpPoder?
-  esferaId       PncpEsfera?
-  ufSigla        String?
-  ufNome         String?
-  municipioIbge  String?
-  municipioNome  String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  cnpj          String      @unique
+  razaoSocial   String
+  poderId       PncpPoder?
+  esferaId      PncpEsfera?
+  ufSigla       String?
+  ufNome        String?
+  municipioIbge String?
+  municipioNome String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
-  contratacoes   PncpContratacao[]
-  contratos      PncpContrato[]
-  atas           PncpAta[]
-  pcas           PncpPca[]
+  contratacoes PncpContratacao[]
+  contratos    PncpContrato[]
+  atas         PncpAta[]
+  pcas         PncpPca[]
 
   @@index([ufSigla])
   @@index([esferaId])
 }
 
 model PncpContratacao {
-  id                         String                   @id @default(cuid())
-  numeroControlePncp         String                   @unique
-  numeroCompra               String?
-  anoCompra                  Int
-  sequencialCompra           Int
-  processo                   String?
+  id                 String  @id @default(cuid())
+  numeroControlePncp String  @unique
+  numeroCompra       String?
+  anoCompra          Int
+  sequencialCompra   Int
+  processo           String?
 
-  modalidadeId               Int
-  modalidadeNome             String
-  modalidade                 PncpModalidade?
-  modoDisputaId              Int?
-  modoDisputaNome            String?
-  tipoInstrumentoId          Int?
-  tipoInstrumentoNome        String?
-  situacaoId                 Int                      @default(1)
-  situacaoNome               String?
-  situacao                   PncpSituacaoContratacao  @default(DIVULGADA)
-  categoriaProcessoId        Int?
-  categoriaProcessoNome      String?
+  modalidadeId          Int
+  modalidadeNome        String
+  modalidade            PncpModalidade?
+  modoDisputaId         Int?
+  modoDisputaNome       String?
+  tipoInstrumentoId     Int?
+  tipoInstrumentoNome   String?
+  situacaoId            Int                     @default(1)
+  situacaoNome          String?
+  situacao              PncpSituacaoContratacao @default(DIVULGADA)
+  categoriaProcessoId   Int?
+  categoriaProcessoNome String?
 
-  objetoCompra               String?                  @db.Text
-  informacaoComplementar     String?                  @db.Text
-  srp                        Boolean                  @default(false)
-  orcamentoSigiloso          Boolean                  @default(false)
+  objetoCompra           String? @db.Text
+  informacaoComplementar String? @db.Text
+  srp                    Boolean @default(false)
+  orcamentoSigiloso      Boolean @default(false)
 
-  valorTotalEstimado         Decimal?                 @db.Decimal(24, 4)
-  valorTotalHomologado       Decimal?                 @db.Decimal(24, 4)
+  valorTotalEstimado   Decimal? @db.Decimal(24, 4)
+  valorTotalHomologado Decimal? @db.Decimal(24, 4)
 
-  dataAberturaProposta       DateTime?
-  dataEncerramentoProposta   DateTime?
-  dataPublicacaoPncp         DateTime?                @db.Date
-  dataInclusao               DateTime?                @db.Date
-  dataAtualizacao            DateTime?
+  dataAberturaProposta     DateTime?
+  dataEncerramentoProposta DateTime?
+  dataPublicacaoPncp       DateTime? @db.Date
+  dataInclusao             DateTime? @db.Date
+  dataAtualizacao          DateTime?
 
-  amparoLegalCodigo          Int?
-  amparoLegalNome            String?
-  amparoLegalDescricao       String?
+  amparoLegalCodigo    Int?
+  amparoLegalNome      String?
+  amparoLegalDescricao String?
 
-  orgaoCnpj                  String
-  orgaoRazaoSocial           String?
-  orgaoPoderId               String?
-  orgaoEsferaId              String?
-  unidadeCodigo              String?
-  unidadeNome                String?
-  unidadeCodigoIbge          String?
-  unidadeMunicipioNome       String?
-  unidadeUfSigla             String?
-  unidadeUfNome              String?
+  orgaoCnpj            String
+  orgaoRazaoSocial     String?
+  orgaoPoderId         String?
+  orgaoEsferaId        String?
+  unidadeCodigo        String?
+  unidadeNome          String?
+  unidadeCodigoIbge    String?
+  unidadeMunicipioNome String?
+  unidadeUfSigla       String?
+  unidadeUfNome        String?
 
-  orgaoSubrogadoCnpj         String?
-  orgaoSubrogadoRazaoSocial  String?
-  unidadeSubrogadaCodigo     String?
-  unidadeSubrogadaNome       String?
-  unidadeSubrogadaUfSigla    String?
+  orgaoSubrogadoCnpj            String?
+  orgaoSubrogadoRazaoSocial     String?
+  unidadeSubrogadaCodigo        String?
+  unidadeSubrogadaNome          String?
+  unidadeSubrogadaUfSigla       String?
   unidadeSubrogadaMunicipioNome String?
 
-  usuarioNome                String?
-  linkSistemaOrigem          String?
-  justificativaPresencial    String?
+  usuarioNome             String?
+  linkSistemaOrigem       String?
+  justificativaPresencial String?
 
-  hashConteudo               String?
-  sincronizadoEm             DateTime                 @default(now())
-  createdAt                  DateTime                 @default(now())
-  updatedAt                  DateTime                 @updatedAt
+  hashConteudo   String?
+  sincronizadoEm DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  orgao                      PncpOrgao                @relation(fields: [orgaoCnpj], references: [cnpj])
-  itens                      PncpItemContratacao[]
-  documentos                 PncpDocumento[]          @relation("ContratacaoDocumentos")
-  atas                       PncpAta[]
+  orgao      PncpOrgao             @relation(fields: [orgaoCnpj], references: [cnpj])
+  itens      PncpItemContratacao[]
+  documentos PncpDocumento[]       @relation("ContratacaoDocumentos")
+  atas       PncpAta[]
 
   @@index([orgaoCnpj])
   @@index([modalidadeId])
@@ -638,32 +649,32 @@ model PncpContratacao {
 }
 
 model PncpItemContratacao {
-  id                      String               @id @default(cuid())
-  contratacaoId           String
-  numeroItem              Int
+  id            String @id @default(cuid())
+  contratacaoId String
+  numeroItem    Int
 
-  descricao               String?              @db.Text
-  materialOuServico       String?
-  tipoBeneficioId         Int?
-  tipoBeneficioNome       String?
+  descricao                String?           @db.Text
+  materialOuServico        String?
+  tipoBeneficioId          Int?
+  tipoBeneficioNome        String?
   incentivoProdutivoBasico Boolean?
-  criterioJulgamentoId    Int?
-  criterioJulgamentoNome  String?
-  situacaoId              Int?
-  situacaoNome            String?
-  situacao                PncpSituacaoItem?
-  unidadeMedida           String?
-  quantidade              Decimal?             @db.Decimal(18, 4)
-  valorUnitarioEstimado   Decimal?             @db.Decimal(24, 4)
-  valorTotal              Decimal?             @db.Decimal(24, 4)
-  orcamentoSigiloso       Boolean              @default(false)
-  dataAtualizacao         DateTime?
+  criterioJulgamentoId     Int?
+  criterioJulgamentoNome   String?
+  situacaoId               Int?
+  situacaoNome             String?
+  situacao                 PncpSituacaoItem?
+  unidadeMedida            String?
+  quantidade               Decimal?          @db.Decimal(18, 4)
+  valorUnitarioEstimado    Decimal?          @db.Decimal(24, 4)
+  valorTotal               Decimal?          @db.Decimal(24, 4)
+  orcamentoSigiloso        Boolean           @default(false)
+  dataAtualizacao          DateTime?
 
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  contratacao             PncpContratacao      @relation(fields: [contratacaoId], references: [id], onDelete: Cascade)
-  resultados              PncpResultadoItem[]
+  contratacao PncpContratacao     @relation(fields: [contratacaoId], references: [id], onDelete: Cascade)
+  resultados  PncpResultadoItem[]
 
   @@unique([contratacaoId, numeroItem])
   @@index([contratacaoId])
@@ -671,29 +682,29 @@ model PncpItemContratacao {
 }
 
 model PncpResultadoItem {
-  id                    String               @id @default(cuid())
-  itemId                String
-  sequencialResultado   Int
+  id                  String @id @default(cuid())
+  itemId              String
+  sequencialResultado Int
 
-  tipoPessoa            String?
-  niFornecedor          String?
-  nomeFornecedor        String?
-  porteEmpresaId        Int?
-  porteEmpresaNome      String?
-  situacaoId            Int?
-  situacaoNome          String?
-  valorUnitario         Decimal?             @db.Decimal(24, 4)
-  quantidade            Decimal?             @db.Decimal(18, 4)
-  valorTotal            Decimal?             @db.Decimal(24, 4)
-  marca                 String?
-  modelo                String?
-  dataResultado         DateTime?            @db.Date
-  dataAtualizacao       DateTime?
+  tipoPessoa       String?
+  niFornecedor     String?
+  nomeFornecedor   String?
+  porteEmpresaId   Int?
+  porteEmpresaNome String?
+  situacaoId       Int?
+  situacaoNome     String?
+  valorUnitario    Decimal?  @db.Decimal(24, 4)
+  quantidade       Decimal?  @db.Decimal(18, 4)
+  valorTotal       Decimal?  @db.Decimal(24, 4)
+  marca            String?
+  modelo           String?
+  dataResultado    DateTime? @db.Date
+  dataAtualizacao  DateTime?
 
-  createdAt             DateTime             @default(now())
+  createdAt DateTime @default(now())
 
-  item                  PncpItemContratacao  @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  fornecedor            PncpFornecedor?      @relation(fields: [niFornecedor], references: [ni])
+  item       PncpItemContratacao @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fornecedor PncpFornecedor?     @relation(fields: [niFornecedor], references: [ni])
 
   @@unique([itemId, sequencialResultado])
   @@index([itemId])
@@ -701,72 +712,72 @@ model PncpResultadoItem {
 }
 
 model PncpContrato {
-  id                           String           @id @default(cuid())
-  numeroControlePncp           String           @unique
-  numeroControlePncpCompra     String?
-  numeroContratoEmpenho        String?
-  anoContrato                  Int
-  sequencialContrato           Int
-  processo                     String?
+  id                       String  @id @default(cuid())
+  numeroControlePncp       String  @unique
+  numeroControlePncpCompra String?
+  numeroContratoEmpenho    String?
+  anoContrato              Int
+  sequencialContrato       Int
+  processo                 String?
 
-  tipoContratoId               Int?
-  tipoContratoNome             String?
-  tipoContrato                 PncpTipoContrato?
-  categoriaProcessoId          Int?
-  categoriaProcessoNome        String?
-  receita                      Boolean          @default(false)
+  tipoContratoId        Int?
+  tipoContratoNome      String?
+  tipoContrato          PncpTipoContrato?
+  categoriaProcessoId   Int?
+  categoriaProcessoNome String?
+  receita               Boolean           @default(false)
 
-  objetoContrato               String?          @db.Text
-  informacaoComplementar       String?          @db.Text
+  objetoContrato         String? @db.Text
+  informacaoComplementar String? @db.Text
 
-  tipoPessoa                   String?
-  niFornecedor                 String?
-  nomeRazaoSocialFornecedor    String?
-  tipoPessoaSubcontratada      String?
-  niFornecedorSubcontratado    String?
-  nomeFornecedorSubcontratado  String?
+  tipoPessoa                  String?
+  niFornecedor                String?
+  nomeRazaoSocialFornecedor   String?
+  tipoPessoaSubcontratada     String?
+  niFornecedorSubcontratado   String?
+  nomeFornecedorSubcontratado String?
 
-  valorInicial                 Decimal?         @db.Decimal(24, 4)
-  numeroParcelas               Int?
-  valorParcela                 Decimal?         @db.Decimal(24, 4)
-  valorGlobal                  Decimal?         @db.Decimal(24, 4)
-  valorAcumulado               Decimal?         @db.Decimal(24, 4)
+  valorInicial   Decimal? @db.Decimal(24, 4)
+  numeroParcelas Int?
+  valorParcela   Decimal? @db.Decimal(24, 4)
+  valorGlobal    Decimal? @db.Decimal(24, 4)
+  valorAcumulado Decimal? @db.Decimal(24, 4)
 
-  dataAssinatura               DateTime?        @db.Date
-  dataVigenciaInicio           DateTime?        @db.Date
-  dataVigenciaFim              DateTime?        @db.Date
-  dataPublicacaoPncp           DateTime?
-  dataAtualizacao              DateTime?
+  dataAssinatura     DateTime? @db.Date
+  dataVigenciaInicio DateTime? @db.Date
+  dataVigenciaFim    DateTime? @db.Date
+  dataPublicacaoPncp DateTime?
+  dataAtualizacao    DateTime?
 
-  numeroRetificacao            Int              @default(0)
+  numeroRetificacao Int @default(0)
 
-  orgaoCnpj                    String
-  orgaoRazaoSocial             String?
-  orgaoPoderId                 String?
-  orgaoEsferaId                String?
-  unidadeCodigo                String?
-  unidadeNome                  String?
-  unidadeCodigoIbge            String?
-  unidadeMunicipioNome         String?
-  unidadeUfSigla               String?
-  unidadeUfNome                String?
+  orgaoCnpj            String
+  orgaoRazaoSocial     String?
+  orgaoPoderId         String?
+  orgaoEsferaId        String?
+  unidadeCodigo        String?
+  unidadeNome          String?
+  unidadeCodigoIbge    String?
+  unidadeMunicipioNome String?
+  unidadeUfSigla       String?
+  unidadeUfNome        String?
 
-  orgaoSubrogadoCnpj           String?
-  unidadeSubrogadaCodigo       String?
-  unidadeSubrogadaNome         String?
+  orgaoSubrogadoCnpj     String?
+  unidadeSubrogadaCodigo String?
+  unidadeSubrogadaNome   String?
 
-  identificadorCipi            String?
-  urlCipi                      String?
-  usuarioNome                  String?
+  identificadorCipi String?
+  urlCipi           String?
+  usuarioNome       String?
 
-  hashConteudo                 String?
-  sincronizadoEm               DateTime         @default(now())
-  createdAt                    DateTime         @default(now())
-  updatedAt                    DateTime         @updatedAt
+  hashConteudo   String?
+  sincronizadoEm DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  orgao                        PncpOrgao        @relation(fields: [orgaoCnpj], references: [cnpj])
-  documentos                   PncpDocumento[]  @relation("ContratoDocumentos")
-  fornecedor                   PncpFornecedor?  @relation(fields: [niFornecedor], references: [ni])
+  orgao      PncpOrgao       @relation(fields: [orgaoCnpj], references: [cnpj])
+  documentos PncpDocumento[] @relation("ContratoDocumentos")
+  fornecedor PncpFornecedor? @relation(fields: [niFornecedor], references: [ni])
 
   @@index([orgaoCnpj])
   @@index([niFornecedor])
@@ -778,44 +789,44 @@ model PncpContrato {
 }
 
 model PncpAta {
-  id                        String     @id @default(cuid())
-  numeroControlePncpAta     String     @unique
-  numeroControlePncpCompra  String?
-  numeroAtaRegistroPreco    String?
-  anoAta                    Int
-  sequencialAta             Int
+  id                       String  @id @default(cuid())
+  numeroControlePncpAta    String  @unique
+  numeroControlePncpCompra String?
+  numeroAtaRegistroPreco   String?
+  anoAta                   Int
+  sequencialAta            Int
 
-  objetoContratacao         String?    @db.Text
-  cancelado                 Boolean    @default(false)
+  objetoContratacao String? @db.Text
+  cancelado         Boolean @default(false)
 
-  dataAssinatura            DateTime?  @db.Date
-  vigenciaInicio            DateTime?  @db.Date
-  vigenciaFim               DateTime?  @db.Date
-  dataCancelamento          DateTime?  @db.Date
-  dataPublicacaoPncp        DateTime?  @db.Date
-  dataInclusao              DateTime?  @db.Date
-  dataAtualizacao           DateTime?
+  dataAssinatura     DateTime? @db.Date
+  vigenciaInicio     DateTime? @db.Date
+  vigenciaFim        DateTime? @db.Date
+  dataCancelamento   DateTime? @db.Date
+  dataPublicacaoPncp DateTime? @db.Date
+  dataInclusao       DateTime? @db.Date
+  dataAtualizacao    DateTime?
 
-  cnpjOrgao                 String
-  nomeOrgao                 String?
-  codigoUnidadeOrgao        String?
-  nomeUnidadeOrgao          String?
+  cnpjOrgao          String
+  nomeOrgao          String?
+  codigoUnidadeOrgao String?
+  nomeUnidadeOrgao   String?
 
-  cnpjOrgaoSubrogado        String?
-  nomeOrgaoSubrogado        String?
-  codigoUnidadeSubrogada    String?
-  nomeUnidadeSubrogada      String?
+  cnpjOrgaoSubrogado     String?
+  nomeOrgaoSubrogado     String?
+  codigoUnidadeSubrogada String?
+  nomeUnidadeSubrogada   String?
 
-  usuario                   String?
+  usuario String?
 
-  hashConteudo              String?
-  sincronizadoEm            DateTime   @default(now())
-  createdAt                 DateTime   @default(now())
-  updatedAt                 DateTime   @updatedAt
+  hashConteudo   String?
+  sincronizadoEm DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  orgao                     PncpOrgao  @relation(fields: [cnpjOrgao], references: [cnpj])
-  contratacao               PncpContratacao? @relation(fields: [numeroControlePncpCompra], references: [numeroControlePncp])
-  documentos                PncpDocumento[]  @relation("AtaDocumentos")
+  orgao       PncpOrgao        @relation(fields: [cnpjOrgao], references: [cnpj])
+  contratacao PncpContratacao? @relation(fields: [numeroControlePncpCompra], references: [numeroControlePncp])
+  documentos  PncpDocumento[]  @relation("AtaDocumentos")
 
   @@index([cnpjOrgao])
   @@index([vigenciaFim])
@@ -825,28 +836,28 @@ model PncpAta {
 }
 
 model PncpPca {
-  id                  String       @id @default(cuid())
-  idPcaPncp           String       @unique
-  anoPca              Int
-  cnpjOrgao           String
-  razaoSocialOrgao    String?
-  codigoUnidade       String?
-  nomeUnidade         String?
-  dataPublicacaoPncp  DateTime?    @db.Date
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  id                 String    @id @default(cuid())
+  idPcaPncp          String    @unique
+  anoPca             Int
+  cnpjOrgao          String
+  razaoSocialOrgao   String?
+  codigoUnidade      String?
+  nomeUnidade        String?
+  dataPublicacaoPncp DateTime? @db.Date
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  orgao               PncpOrgao    @relation(fields: [cnpjOrgao], references: [cnpj])
-  itens               PncpItemPca[]
+  orgao PncpOrgao     @relation(fields: [cnpjOrgao], references: [cnpj])
+  itens PncpItemPca[]
 
   @@index([cnpjOrgao])
   @@index([anoPca])
 }
 
 model PncpItemPca {
-  id                          String    @id @default(cuid())
-  pcaId                       String
-  numeroItem                  Int
+  id         String @id @default(cuid())
+  pcaId      String
+  numeroItem Int
 
   categoriaItemPcaNome        String?
   classificacaoCatalogoId     String?
@@ -869,73 +880,73 @@ model PncpItemPca {
   dataInclusao                DateTime? @db.Date
   dataAtualizacao             DateTime? @db.Date
 
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  pca                         PncpPca   @relation(fields: [pcaId], references: [id], onDelete: Cascade)
+  pca PncpPca @relation(fields: [pcaId], references: [id], onDelete: Cascade)
 
   @@unique([pcaId, numeroItem])
   @@index([pcaId])
 }
 
 model PncpFornecedor {
-  id          String    @id @default(cuid())
-  ni          String    @unique
-  tipoPessoa  String
-  nome        String
-  porteId     Int?
-  porteNome   String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String   @id @default(cuid())
+  ni         String   @unique
+  tipoPessoa String
+  nome       String
+  porteId    Int?
+  porteNome  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  resultados  PncpResultadoItem[]
-  contratos   PncpContrato[]
+  resultados PncpResultadoItem[]
+  contratos  PncpContrato[]
 
   @@index([ni])
   @@index([nome])
 }
 
 model PncpDocumento {
-  id                   String    @id @default(cuid())
-  entidadeTipo         String
-  entidadeId           String
-  sequencialDocumento  Int
-  tipoDocumentoId      Int?
-  tipoDocumentoNome    String?
-  titulo               String?
-  url                  String?
-  tamanho              BigInt?
-  dataPublicacao       DateTime? @db.Date
-  createdAt            DateTime  @default(now())
+  id                  String    @id @default(cuid())
+  entidadeTipo        String
+  entidadeId          String
+  sequencialDocumento Int
+  tipoDocumentoId     Int?
+  tipoDocumentoNome   String?
+  titulo              String?
+  url                 String?
+  tamanho             BigInt?
+  dataPublicacao      DateTime? @db.Date
+  createdAt           DateTime  @default(now())
 
-  contratacao          PncpContratacao? @relation("ContratacaoDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_contratacao")
-  contrato             PncpContrato?    @relation("ContratoDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_contrato")
-  ata                  PncpAta?         @relation("AtaDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_ata")
+  contratacao PncpContratacao? @relation("ContratacaoDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_contratacao")
+  contrato    PncpContrato?    @relation("ContratoDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_contrato")
+  ata         PncpAta?         @relation("AtaDocumentos", fields: [entidadeId], references: [id], map: "fk_doc_ata")
 
   @@unique([entidadeTipo, entidadeId, sequencialDocumento])
   @@index([entidadeTipo, entidadeId])
 }
 
 model PncpSyncState {
-  id                     String          @id @default(cuid())
-  entityType             SyncEntityType
-  syncKey                String
-  dataInicial            DateTime        @db.Date
-  dataFinal              DateTime        @db.Date
-  status                 SyncStatus      @default(PENDING)
-  totalRegistros         Int?
-  totalPaginas           Int?
-  paginaAtual            Int             @default(1)
-  registrosProcessados   Int             @default(0)
-  registrosInseridos     Int             @default(0)
-  registrosAtualizados   Int             @default(0)
-  registrosDuplicados    Int             @default(0)
-  erros                  Int             @default(0)
-  ultimoErro             String?         @db.Text
-  iniciadoEm             DateTime?
-  concluidoEm            DateTime?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
+  id                   String         @id @default(cuid())
+  entityType           SyncEntityType
+  syncKey              String
+  dataInicial          DateTime       @db.Date
+  dataFinal            DateTime       @db.Date
+  status               SyncStatus     @default(PENDING)
+  totalRegistros       Int?
+  totalPaginas         Int?
+  paginaAtual          Int            @default(1)
+  registrosProcessados Int            @default(0)
+  registrosInseridos   Int            @default(0)
+  registrosAtualizados Int            @default(0)
+  registrosDuplicados  Int            @default(0)
+  erros                Int            @default(0)
+  ultimoErro           String?        @db.Text
+  iniciadoEm           DateTime?
+  concluidoEm          DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   @@unique([entityType, syncKey])
   @@index([entityType])
@@ -944,23 +955,23 @@ model PncpSyncState {
 }
 
 model PncpSyncCursor {
-  id              String          @id @default(cuid())
-  entityType      SyncEntityType  @unique
-  ultimaDataSync  DateTime        @db.Date
-  updatedAt       DateTime        @updatedAt
+  id             String         @id @default(cuid())
+  entityType     SyncEntityType @unique
+  ultimaDataSync DateTime       @db.Date
+  updatedAt      DateTime       @updatedAt
 }
 
 /// Licitação ou contrato favoritado por um usuário.
 model Favorite {
-  id             String    @id @default(cuid())
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  entityType     String    /// 'procurement' | 'contract'
-  entityId       String
-  label          String?   /// Nota/apelido pessoal do usuário
-  status         String    @default("ANALISE") /// Fase do funil (ANALISE, PREPARACAO, PROPOSTA, GANHA, PERDIDA)
-  valorProposta  Float?    /// Valor financeiro estimado para a oportunidade
-  createdAt      DateTime  @default(now())
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  entityType    String /// 'procurement' | 'contract'
+  entityId      String
+  label         String? /// Nota/apelido pessoal do usuário
+  status        String   @default("ANALISE") /// Fase do funil (ANALISE, PREPARACAO, PROPOSTA, GANHA, PERDIDA)
+  valorProposta Float? /// Valor financeiro estimado para a oportunidade
+  createdAt     DateTime @default(now())
 
   @@unique([userId, entityType, entityId])
   @@index([userId])
@@ -969,18 +980,18 @@ model Favorite {
 
 /// Alerta de busca: notifica quando novos resultados aparecem.
 model Alert {
-  id             String    @id @default(cuid())
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  name           String    /// Ex: "Pregão TI SP"
-  keywords       String[]  /// Palavras-chave a monitorar
-  uf             String?
-  modalidadeId   Int?
-  entidade       String    @default("todos") /// 'todos' | 'contratacoes' | 'contratos'
-  isActive       Boolean   @default(true)
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  name            String /// Ex: "Pregão TI SP"
+  keywords        String[] /// Palavras-chave a monitorar
+  uf              String?
+  modalidadeId    Int?
+  entidade        String    @default("todos") /// 'todos' | 'contratacoes' | 'contratos'
+  isActive        Boolean   @default(true)
   lastTriggeredAt DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([userId, isActive])
 }
@@ -1025,32 +1036,32 @@ enum AuditAction {
 
 /// Assinatura de um usuário na plataforma LicitaAI
 model Subscription {
-  id                     String             @id @default(cuid())
-  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                 String             @unique
+  id     String @id @default(cuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
 
-  plan                   SubscriptionPlan   @default(TRIAL)
-  status                 SubscriptionStatus @default(TRIALING)
+  plan   SubscriptionPlan   @default(TRIAL)
+  status SubscriptionStatus @default(TRIALING)
 
   /// IDs do Stripe — null quando o plano é TRIAL
-  stripeCustomerId       String?
-  stripeSubscriptionId   String?
-  stripePriceId          String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
 
-  trialStartsAt          DateTime?
-  trialEndsAt            DateTime?
-  trialDismissedAt       DateTime?          /// usuário fechou o banner de trial
+  trialStartsAt    DateTime?
+  trialEndsAt      DateTime?
+  trialDismissedAt DateTime? /// usuário fechou o banner de trial
 
-  currentPeriodStart     DateTime?
-  currentPeriodEnd       DateTime?
-  cancelAtPeriodEnd      Boolean            @default(false)
-  canceledAt             DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  canceledAt         DateTime?
 
-  hasUsedTrial           Boolean            @default(false)   /// impede 2º trial pelo mesmo e-mail
-  cnpjAtTrial            String?            /// CNPJ registrado no momento do trial (impede trial por CNPJ)
+  hasUsedTrial Boolean @default(false) /// impede 2º trial pelo mesmo e-mail
+  cnpjAtTrial  String? /// CNPJ registrado no momento do trial (impede trial por CNPJ)
 
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([stripeCustomerId])
@@ -1067,15 +1078,15 @@ model PlanConfig {
   priceBrlMes        Decimal          @db.Decimal(10, 2)
   priceBrlAnual      Decimal          @db.Decimal(10, 2)
 
-  maxAlertsPerDay    Int              @default(5)
-  maxSavedSearches   Int              @default(3)
-  hasPredictiveScore Boolean          @default(false)
-  hasBudgetAnalysis  Boolean          @default(false)
-  hasApiAccess       Boolean          @default(false)
+  maxAlertsPerDay    Int     @default(5)
+  maxSavedSearches   Int     @default(3)
+  hasPredictiveScore Boolean @default(false)
+  hasBudgetAnalysis  Boolean @default(false)
+  hasApiAccess       Boolean @default(false)
 
-  isActive           Boolean          @default(true)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 /// Tokens de redefinição de senha (SHA-256 hash armazenado)
@@ -1083,7 +1094,7 @@ model PasswordResetToken {
   id        String    @id @default(cuid())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  tokenHash String    @unique   /// SHA-256 do token enviado por e-mail
+  tokenHash String    @unique /// SHA-256 do token enviado por e-mail
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -1107,3 +1118,67 @@ model SubscriptionAuditLog {
   @@index([createdAt])
 }
 
+// ================================================================
+// I-Verbas / Resoluções SES-MG
+// ================================================================
+
+enum ResolutionStatus {
+  PENDING
+  PROCESSED
+  ERROR
+}
+
+model Resolution {
+  id             String           @id @default(cuid())
+  numero         String           @unique
+  url            String
+  pdfUrl         String
+  dataPublicacao DateTime?
+  status         ResolutionStatus @default(PENDING)
+  resumoIa       String?          @db.Text
+  tags           String[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  items ResolutionItem[]
+
+  @@index([status])
+  @@index([numero])
+}
+
+model ResolutionItem {
+  id           String     @id @default(cuid())
+  resolution   Resolution @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  resolutionId String
+
+  mesoregiao   String?
+  microrregiao String?
+  municipio    String?
+  local        String?
+  item         String?  @db.Text
+  valor        Decimal? @db.Decimal(24, 4)
+  tipoVerba    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([resolutionId])
+  @@index([createdAt])
+}
+
+model ResolutionAlert {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  nome            String
+  municipios      String[]
+  palavrasChave   String[]
+  valorMinimo     Float?
+  whatsapp        String?
+  email           String?
+  isActive        Boolean   @default(true)
+  lastTriggeredAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, isActive])
+}

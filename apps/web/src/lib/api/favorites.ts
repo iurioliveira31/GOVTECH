@@ -56,3 +56,33 @@ export const alertsApi = {
     await apiClient.delete(`/alerts/${id}`);
   },
 };
+
+export const resolutionAlertsApi = {
+  list: async (): Promise<Alert[]> => {
+    const { data } = await apiClient.get('/v1/resolution-alerts');
+    return data;
+  },
+  create: async (payload: { name: string; keywords: string[]; uf?: string; entidade?: string; email?: string }): Promise<Alert> => {
+    // The backend uses 'nome', 'palavrasChave', 'municipios', 'email'
+    const backendPayload = {
+      nome: payload.name,
+      palavrasChave: payload.keywords,
+      municipios: payload.uf ? [payload.uf] : [],
+      email: payload.email,
+    };
+    const { data } = await apiClient.post('/v1/resolution-alerts', backendPayload);
+    return {
+      ...data,
+      name: data.nome,
+      keywords: data.palavrasChave,
+      uf: data.municipios?.[0] || '',
+      entidade: 'todos',
+    };
+  },
+  toggle: async (id: string, isActive: boolean): Promise<void> => {
+    await apiClient.patch(`/v1/resolution-alerts/${id}`, { isActive });
+  },
+  remove: async (id: string): Promise<void> => {
+    await apiClient.delete(`/v1/resolution-alerts/${id}`);
+  },
+};

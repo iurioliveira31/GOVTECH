@@ -12,6 +12,8 @@ import { AlertsModule } from './alerts/alerts.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { EmailModule } from './email/email.module';
 import { IntelligenceModule } from './intelligence/intelligence.module';
+import { ResolutionAlertsModule } from './resolution-alerts/resolution-alerts.module';
+import { ResolutionsModule } from './resolutions/resolutions.module';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
@@ -49,6 +51,8 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     // ── Billing & E-mail ───────────────────────────────────────────────────────
     SubscriptionsModule,
     EmailModule,
+    ResolutionAlertsModule,
+    ResolutionsModule,
   ],
   providers: [
     // Rate limiting aplicado globalmente em todos os endpoints

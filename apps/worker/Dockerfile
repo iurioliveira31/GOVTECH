@@ -2,7 +2,6 @@ FROM node:20-alpine AS alpine
 RUN apk update && apk add --no-cache libc6-compat openssl
 
 FROM alpine as base
-RUN npm i -g npm@latest
 
 FROM base AS builder
 WORKDIR /app

@@ -83,15 +83,23 @@ function LoginContent() {
 
         {/* Logo mark */}
         <div style={{ marginBottom: 48 }}>
-          <div style={{
-            width: 44, height: 44,
-            background: 'linear-gradient(135deg, var(--color-brand-700), var(--color-brand-400))',
-            borderRadius: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20, fontWeight: 900, color: 'white',
-            boxShadow: 'var(--shadow-glow)',
-            marginBottom: 32,
-          }}>L</div>
+          <div style={{ marginBottom: 32 }}>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="gavelGradientLoginLeft" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#00F0FF" />
+                  <stop offset="100%" stopColor="#8A2BE2" />
+                </linearGradient>
+              </defs>
+              <path d="M14 13.9997L10 17.9997L4.5 12.4997L8.5 8.49974L14 13.9997Z" stroke="url(#gavelGradientLoginLeft)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M8.5 8.49976L11 5.99976L16.5 11.4998L14 13.9998" stroke="url(#gavelGradientLoginLeft)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 15L20 20" stroke="url(#gavelGradientLoginLeft)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="19" cy="5" r="1.5" fill="#00F0FF" />
+              <circle cx="21" cy="9" r="1" fill="#8A2BE2" />
+              <path d="M17 7L18.5 5.5" stroke="#00F0FF" strokeWidth="1" strokeLinecap="round"/>
+              <path d="M18.5 10.5L20 9.5" stroke="#8A2BE2" strokeWidth="1" strokeLinecap="round"/>
+            </svg>
+          </div>
 
           <h1 style={{
             fontSize: 36, fontWeight: 800,
@@ -174,18 +182,31 @@ function LoginContent() {
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 40 }}>
             <div style={{
-              width: 52, height: 52,
-              background: 'linear-gradient(135deg, var(--color-brand-700), var(--color-brand-400))',
-              borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 16px',
-              fontSize: 22, fontWeight: 900, color: 'white',
-              boxShadow: 'var(--shadow-glow)',
-            }}>L</div>
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <svg width="52" height="52" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="gavelGradientLoginRight" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#00F0FF" />
+                    <stop offset="100%" stopColor="#8A2BE2" />
+                  </linearGradient>
+                </defs>
+                <path d="M14 13.9997L10 17.9997L4.5 12.4997L8.5 8.49974L14 13.9997Z" stroke="url(#gavelGradientLoginRight)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M8.5 8.49976L11 5.99976L16.5 11.4998L14 13.9998" stroke="url(#gavelGradientLoginRight)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M15 15L20 20" stroke="url(#gavelGradientLoginRight)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="19" cy="5" r="1.5" fill="#00F0FF" />
+                <circle cx="21" cy="9" r="1" fill="#8A2BE2" />
+                <path d="M17 7L18.5 5.5" stroke="#00F0FF" strokeWidth="1" strokeLinecap="round"/>
+                <path d="M18.5 10.5L20 9.5" stroke="#8A2BE2" strokeWidth="1" strokeLinecap="round"/>
+              </svg>
+            </div>
             <h2 style={{
-              fontSize: 24, fontWeight: 800,
-              color: 'var(--color-text-primary)',
-              letterSpacing: '-0.02em',
-            }}>LicitaAI</h2>
+              fontSize: 28, fontWeight: 800,
+              background: 'linear-gradient(90deg, #FFFFFF 0%, #d8b4fe 100%)', 
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.02em', textTransform: 'uppercase'
+            }}>LICITA AI</h2>
             <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 4 }}>
               Inteligência em Licitações Públicas
             </p>

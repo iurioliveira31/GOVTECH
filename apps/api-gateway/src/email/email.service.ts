@@ -221,4 +221,50 @@ export class EmailService {
 </body></html>`,
     );
   }
+
+  // ── 9. Alerta de Resoluções SES/MG ────────────────────────────────────────
+  async sendResolutionAlert(to: string, nomeAlerta: string, itens: any[]) {
+    const tableRows = itens.map(item => `
+      <tr>
+        <td style="padding:12px;border-bottom:1px solid #334155;color:#f1f5f9">${item.municipio}</td>
+        <td style="padding:12px;border-bottom:1px solid #334155;color:#94a3b8">${item.item}</td>
+        <td style="padding:12px;border-bottom:1px solid #334155;color:#10b981;font-weight:bold">R$ ${Number(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+      </tr>
+    `).join('');
+
+    await sendEmail(
+      to,
+      `🚨 Novo Alerta de Resolução SES/MG: ${nomeAlerta}`,
+      `<!DOCTYPE html><html lang="pt-BR"><body style="margin:0;padding:40px 20px;background:#0D1117;font-family:Inter,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+    <table width="600" style="background:#161B22;border:1px solid rgba(148,163,184,0.12);border-radius:16px;overflow:hidden">
+      <tr><td style="padding:32px;text-align:center;background:linear-gradient(135deg,#059669,#10b981)">
+        <div style="font-size:24px;font-weight:900;color:white">🚨 Novo Alerta Encontrado</div>
+      </td></tr>
+      <tr><td style="padding:40px">
+        <h1 style="color:#f1f5f9;font-size:20px;margin:0 0 16px">Seu alerta: "${nomeAlerta}"</h1>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.7;margin:0 0 24px">O sistema encontrou novas resoluções que correspondem aos seus filtros.</p>
+        
+        <table width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;text-align:left;font-size:14px">
+          <thead>
+            <tr>
+              <th style="padding:12px;border-bottom:2px solid #334155;color:#94a3b8">Município</th>
+              <th style="padding:12px;border-bottom:2px solid #334155;color:#94a3b8">Item</th>
+              <th style="padding:12px;border-bottom:2px solid #334155;color:#94a3b8">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+
+        <div style="text-align:center">
+          <a href="${FRONTEND_URL}/resolucoes" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#059669,#10b981);color:white;text-decoration:none;border-radius:10px;font-weight:700">Acessar Painel →</a>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`,
+    );
+  }
 }

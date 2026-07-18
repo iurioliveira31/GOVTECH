@@ -10,10 +10,12 @@ const navItems = [
     section: 'Principal',
     links: [
       { href: '/dashboard',    label: 'Dashboard',    icon: '⊞' },
-      { href: '/busca',        label: 'Busca',        icon: '🔍' },
+      { href: '/busca',        label: 'Busca PNCP',   icon: '🔍' },
       { href: '/favoritos',    label: 'Favoritos',    icon: '⭐' },
       { href: '/alertas',      label: 'Alertas',      icon: '🔔' },
       { href: '/inteligencia', label: 'Inteligência', icon: '🎯' },
+      { href: '/resolucoes',   label: 'Resoluções SES', icon: '📄' },
+
     ],
   },
 
@@ -22,7 +24,6 @@ const navItems = [
     links: [
       { href: '/licitacoes', label: 'Licitações', icon: '🏛' },
       { href: '/contratos', label: 'Contratos', icon: '📋' },
-      { href: '/atas', label: 'Atas de Preço', icon: '📌' },
     ],
   },
   {
@@ -76,16 +77,34 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           transform: mobileOpen ? 'translateX(0)' : undefined,
         }}
       >
-        {/* Logo */}
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L4.5 13.5H11.5L10 22L19.5 10.5H12.5L13 2Z" fill="white" stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" strokeLinejoin="round"/>
+          <div className="sidebar-logo-icon" style={{ background: 'transparent', boxShadow: 'none' }}>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="gavelGradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#00F0FF" />
+                  <stop offset="100%" stopColor="#8A2BE2" />
+                </linearGradient>
+              </defs>
+              <path d="M14 13.9997L10 17.9997L4.5 12.4997L8.5 8.49974L14 13.9997Z" stroke="url(#gavelGradient)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M8.5 8.49976L11 5.99976L16.5 11.4998L14 13.9998" stroke="url(#gavelGradient)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 15L20 20" stroke="url(#gavelGradient)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="19" cy="5" r="1.5" fill="#00F0FF" />
+              <circle cx="21" cy="9" r="1" fill="#8A2BE2" />
+              <path d="M17 7L18.5 5.5" stroke="#00F0FF" strokeWidth="1" strokeLinecap="round"/>
+              <path d="M18.5 10.5L20 9.5" stroke="#8A2BE2" strokeWidth="1" strokeLinecap="round"/>
             </svg>
           </div>
-          <div style={{ flex: 1 }}>
-            <div className="sidebar-logo-text">LicitaAI</div>
-            <div className="sidebar-logo-sub">GovTech Platform</div>
+          <div style={{ flex: 1, paddingLeft: 4 }}>
+            <div className="sidebar-logo-text" style={{ 
+              background: 'linear-gradient(90deg, #FFFFFF 0%, #d8b4fe 100%)', 
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', 
+              fontWeight: 800, letterSpacing: '0.02em', fontSize: '1.25rem' 
+            }}>LICITA AI</div>
+            <div className="sidebar-logo-sub" style={{ 
+              color: '#00F0FF', letterSpacing: '0.05em', fontSize: '0.55rem', 
+              fontWeight: 700, textTransform: 'uppercase' 
+            }}>Inteligência em Licitações</div>
           </div>
           {/* Fechar no mobile */}
           {onMobileClose && (

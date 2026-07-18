@@ -9,15 +9,14 @@ export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractToken(request);
+    console.log("JWT Auth Guard Check. Path:", request.path, "Auth Header:", request.headers.authorization, "Token:", token);
 
     if (!token) {
       throw new UnauthorizedException('Token de autenticação ausente');
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
-      });
+      const payload = this.jwtService.verify(token);
       // Injeta payload no request para uso downstream
       (request as any).user = payload;
       return true;

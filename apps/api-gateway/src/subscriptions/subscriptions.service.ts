@@ -61,7 +61,7 @@ const getStripeClient = () => {
   if (process.env.STRIPE_SECRET_KEY) {
     return new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-06-20',
-    }) as any;
+    } as any) as any;
   }
   return stripeMock;
 };

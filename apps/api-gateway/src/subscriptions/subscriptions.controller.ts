@@ -8,6 +8,8 @@ import { RegisterDto, StartTrialDto, CreateCheckoutDto } from './dto/subscriptio
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 
+import { SkipTransform } from '../common/decorators/skip-transform.decorator';
+
 interface AuthRequest extends Request {
   user: { sub: string; email: string; role: string; tenantId: string };
 }
@@ -50,6 +52,7 @@ export class SubscriptionsController {
   /** POST /subscriptions/webhook — Stripe Webhook (NUNCA bloqueado por auth) */
   @Post('webhook')
   @SkipThrottle()
+  @SkipTransform()
   @HttpCode(HttpStatus.OK)
   handleWebhook(
     @Req() req: RawBodyRequest<Request>,

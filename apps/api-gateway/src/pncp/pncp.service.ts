@@ -451,7 +451,7 @@ export class PncpService {
         take,
         include: {
           _count: {
-            select: { contratacoes: true, contratos: true },
+            select: { contratacoes: true, contratos: true, atas: true },
           },
         },
       }),

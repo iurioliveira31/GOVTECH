@@ -179,9 +179,9 @@ export default function OrgaosPage() {
                       borderTop: '1px solid var(--color-border)',
                     }}>
                       {[
-                        { label: 'Licitações', value: orgao._count.contratacoes },
-                        { label: 'Contratos', value: orgao._count.contratos },
-                        { label: 'Atas', value: orgao._count.atas },
+                        { label: 'Licitações', value: orgao._count.contratacoes || 0 },
+                        { label: 'Contratos', value: orgao._count.contratos || 0 },
+                        { label: 'Atas', value: orgao._count.atas || 0 },
                       ].map((m) => (
                         <div key={m.label} style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, color: 'var(--color-text-primary)' }}>
