@@ -34,6 +34,8 @@ export default async function ResolucoesPage() {
   let resolutions: any[] = [];
   if (response && Array.isArray(response.data)) {
     resolutions = response.data;
+  } else if (response && response.data && Array.isArray(response.data.data)) {
+    resolutions = response.data.data;
   } else if (Array.isArray(response)) {
     resolutions = response;
   }
