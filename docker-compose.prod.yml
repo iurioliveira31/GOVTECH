@@ -80,6 +80,7 @@ services:
     build:
       context: .
       dockerfile: apps/api-gateway/Dockerfile
+      network: host
     restart: always
     environment:
       - NODE_ENV=production
@@ -118,6 +119,7 @@ services:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
+      network: host
     restart: always
     environment:
       - NODE_ENV=production
@@ -155,6 +157,7 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      network: host
       args:
         - NEXT_PUBLIC_API_URL=http://137.131.227.255:4000/api/v1
     restart: always
