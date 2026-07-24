@@ -3,6 +3,7 @@ import {
   Body, UseGuards, Req, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFavoriteDto, UpdateFavoriteStatusDto } from './dto/favorite.dto';
 
@@ -13,7 +14,7 @@ interface JwtUser { id: string; tenantId: string; email: string; role: string }
 type PrismaAny = any;
 
 @Controller('favorites')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, EmailVerifiedGuard)
 export class FavoritesController {
   constructor(private readonly prisma: PrismaService) {}
 

@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshDto, UpdateMeDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -33,6 +34,7 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ login: { limit: 5, ttl: 60000 } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -69,9 +71,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() req: AuthenticatedRequest) {
     return this.authService.me(req.user.sub);
-  }
-
-  /**
+  }  /**
    * PUT /auth/me
    * Atualiza perfil do usuário autenticado.
    */
@@ -79,5 +79,39 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   updateMe(@Req() req: AuthenticatedRequest, @Body() dto: UpdateMeDto) {
     return this.authService.updateMe(req.user.sub, dto);
+  }
+
+  /**
+   * POST /auth/verify-email
+   * Valida o token JWT e confirma o e-mail do usuário.
+   */
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  verifyEmail(@Body('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  /**
+   * POST /auth/resend-verification
+   * Reenvia o e-mail com um novo token JWT de confirmação para o usuário autenticado.
+   */
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  resendVerification(@Req() req: AuthenticatedRequest) {
+    return this.authService.resendVerification(req.user.sub);
+  }
+
+  /**
+   * POST /auth/mfa/verify
+   * Valida o token provisório do MFA e o código de 6 dígitos.
+   */
+  @Post('mfa/verify')
+  @HttpCode(HttpStatus.OK)
+  verifyMfa(
+    @Body('mfaToken') mfaToken: string,
+    @Body('code') code: string,
+  ) {
+    return this.authService.verifyMfa(mfaToken, code);
   }
 }

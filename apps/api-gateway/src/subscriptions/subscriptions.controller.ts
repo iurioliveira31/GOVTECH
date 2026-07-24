@@ -6,7 +6,7 @@ import type { Request } from 'express';
 import { SubscriptionsService } from './subscriptions.service';
 import { RegisterDto, StartTrialDto, CreateCheckoutDto } from './dto/subscription.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 import { SkipTransform } from '../common/decorators/skip-transform.decorator';
 
@@ -21,6 +21,7 @@ export class SubscriptionsController {
   /** POST /subscriptions/register — Criar conta + escolher plano */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ login: { limit: 5, ttl: 60000 } })
   register(@Body() dto: RegisterDto) {
     return this.subscriptions.register(dto);
   }

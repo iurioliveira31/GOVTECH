@@ -81,6 +81,7 @@ model Tenant {
   refreshTokens       RefreshToken[]
   paymentTransactions PaymentTransaction[]
   searchIndices       SearchIndex[]
+  walletConfig        TenantWalletConfig?
 
   @@index([createdAt])
 }
@@ -175,6 +176,7 @@ model Procurement {
   @@index([tenantId, status])
   @@index([tenantId, closingDate])
   @@index([createdById])
+  @@index([publicationDate, estimatedValue])
 }
 
 model ProcurementDocument {
@@ -214,6 +216,7 @@ model Contract {
   @@index([tenantId, status])
   @@index([tenantId, contractNumber])
   @@index([procurementId])
+  @@index([value])
 }
 
 model ContractDocument {
@@ -377,7 +380,15 @@ model CrmAccount {
   opportunities CrmOpportunity[]
   activities    CrmActivity[]
 
+  /// Campos de órgão público v2
+  cnpj          String?  /// CNPJ do órgão (ex: CNPJ FMS ou Prefeitura)
+  ibgeMunicipio String?  /// FK para Municipio
+  tipoOrgao     String?  /// FMS / PREFEITURA / HOSPITAL / CONSORCIO / SECRETARIA
+  cnes          String?  /// Código CNES para hospitais/clínicas
+
   @@index([tenantId, name])
+  @@index([cnpj])
+  @@index([ibgeMunicipio])
 }
 
 model CrmContact {
@@ -405,7 +416,18 @@ model CrmOpportunity {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
+  /// Campos de inteligência comercial v2
+  recursoId         String?  /// FK para RecursoPublico
+  ibgeMunicipio     String?  /// Território da oportunidade
+  tipoEquipamento   String?  /// Categoria de equipamento
+  bandaOrigem       String?  /// Banda quando a oportunidade foi criada
+  motivoPerda       String?  /// Para quando fecha como PERDIDA
+  scoreAtual        Int?     /// Score calculado
+
+  recurso RecursoPublico? @relation(fields: [recursoId], references: [id])
+
   @@index([accountId, stage])
+  @@index([recursoId])
 }
 
 model CrmActivity {
@@ -976,6 +998,7 @@ model Favorite {
   @@unique([userId, entityType, entityId])
   @@index([userId])
   @@index([entityType, entityId])
+  @@index([userId, status])
 }
 
 /// Alerta de busca: notifica quando novos resultados aparecem.
@@ -1119,13 +1142,79 @@ model SubscriptionAuditLog {
 }
 
 // ================================================================
-// I-Verbas / Resoluções SES-MG
+// I-Verbas / Resoluções SES-MG — v2 com Intelligence
 // ================================================================
 
 enum ResolutionStatus {
   PENDING
   PROCESSED
   ERROR
+  DESCARTADA /// Resolução administrativa/convalidação — lida pela IA mas não exibida na UI
+}
+
+/// Banda de oportunidade calculada pelo score A-D
+enum BandaOportunidade {
+  A /// >= 75 — alerta imediato
+  B /// 55-74 — fila de qualificação
+  C /// 35-54 — radar silencioso
+  D /// < 35  — baixa prioridade
+}
+
+/// Status de adesão ao termo da resolução
+enum StatusAdesao {
+  PENDENTE
+  ASSINADO
+  VENCIDO
+  NAO_APLICAVEL
+}
+
+/// Fonte de origem do documento capturado
+enum FonteDocumento {
+  SESLEGIS
+  PORTAL_ANTIGO_SES
+  DOU_INLABS
+  DIARIO_OFICIAL_MG
+  QUERIDO_DIARIO
+  DOMM_AMM
+  IOF_MG
+  MANUAL
+}
+
+/// Tipo do ato normativo
+enum TipoAto {
+  RESOLUCAO
+  DELIBERACAO
+  PORTARIA
+  NOTA_TECNICA
+  INSTRUCAO_NORMATIVA
+  OUTROS
+}
+
+/// Estágio de execução de um recurso público
+enum EstagioRecurso {
+  INDICADO      /// Emenda indicada / proposta enviada
+  APROVADO      /// Aprovado formalmente
+  EMPENHADO     /// Empenho realizado
+  PAGO          /// Recurso transferido / pago
+  DISPONIVEL    /// Recurso disponível no FMS
+  EXECUCAO      /// Em execução pelo município
+  CONCLUIDO     /// Totalmente executado
+  CANCELADO     /// Cancelado
+}
+
+/// Tipo de evento na linha do tempo do recurso
+enum TipoEventoRecurso {
+  PORTARIA_FEDERAL
+  RESOLUCAO_SES
+  TERMO_ADESAO
+  EMPENHO
+  PAGAMENTO
+  PCA
+  DFD
+  COTACAO
+  EDITAL
+  CONTRATO
+  ATUALIZACAO
 }
 
 model Resolution {
@@ -1137,13 +1226,33 @@ model Resolution {
   status         ResolutionStatus @default(PENDING)
   resumoIa       String?          @db.Text
   tags           String[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
 
-  items ResolutionItem[]
+  /// Campos novos v2
+  fonte              FonteDocumento  @default(SESLEGIS)
+  tipoAto            TipoAto         @default(RESOLUCAO)
+  numeroPortaria     String?         /// Portaria federal de origem (ex: GM/MS 1234/2026)
+  programaFederal    String?         /// Programa de saúde vinculado
+  valorTotal         Decimal?        @db.Decimal(24, 4) /// Soma dos itens
+  prazoAdesao        DateTime?       /// Data limite para o município assinar o termo
+  statusAdesao       StatusAdesao    @default(NAO_APLICAVEL)
+  score              Int?            /// 0-100
+  banda              BandaOportunidade? /// A/B/C/D
+  hashConteudo       String?         /// SHA-256 do PDF para dedup
+  origemDocumento    String?         /// URL do Diário Oficial onde foi publicado
+  recursoId          String?         /// FK para RecursoPublico se identificado
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items    ResolutionItem[]
+  recurso  RecursoPublico?  @relation(fields: [recursoId], references: [id])
 
   @@index([status])
   @@index([numero])
+  @@index([dataPublicacao])
+  @@index([banda])
+  @@index([prazoAdesao])
+  @@index([fonte])
 }
 
 model ResolutionItem {
@@ -1159,10 +1268,23 @@ model ResolutionItem {
   valor        Decimal? @db.Decimal(24, 4)
   tipoVerba    String?
 
+  /// Campos novos v2
+  ibgeMunicipio         String?  /// Código IBGE 7 dígitos
+  cnpjBeneficiario      String?  /// CNPJ do FMS ou Prefeitura
+  categoriaEquipamento  String?  /// FK lógica para EquipamentoCategoria.codigo
+  prazoExecucao         DateTime? /// Prazo para executar o recurso
+  statusAdesao          StatusAdesao? /// Status do município nesta resolução
+  quantidadeEquipamento Int?     /// Quantidade explícita quando citada
+
   createdAt DateTime @default(now())
 
+  municipioRef  Municipio? @relation(fields: [ibgeMunicipio], references: [ibge])
+
   @@index([resolutionId])
+  @@index([ibgeMunicipio])
+  @@index([categoriaEquipamento])
   @@index([createdAt])
+  @@index([municipio, valor])
 }
 
 model ResolutionAlert {
@@ -1180,5 +1302,308 @@ model ResolutionAlert {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  /// Campos novos v2
+  ibgesMunicipios        String[]         /// IBGEs para filtro preciso
+  mesorregioes           String[]         /// Monitorar mesorregião inteira
+  micros                 String[]         /// Monitorar microrregião
+  categoriasEquipamento  String[]         /// Filtrar por produto do cliente
+  bandaMinima            BandaOportunidade? /// Só alertar de X em diante
+  fontes                 FonteDocumento[] /// Quais fontes monitorar
+  telegram               String?          /// Chat ID do Telegram
+
   @@index([userId, isActive])
+}
+
+// ================================================================
+// Território — Cadastro Municipal Base
+// ================================================================
+
+/// Cadastro de todos os municípios brasileiros (foco: MG)
+model Municipio {
+  ibge             String   @id /// Código IBGE 7 dígitos (chave real)
+  nome             String
+  uf               String   /// Sigla do estado
+  cnpjPrefeitura   String?  /// CNPJ da Prefeitura
+  cnpjFms          String?  /// CNPJ do Fundo Municipal de Saúde (diferente da Prefeitura!)
+  mesoregiao       String?
+  microrregiao     String?
+  populacao        Int?
+  /// Onde publica o diário oficial (DOMM, IOF-MG, Diário próprio, etc.)
+  ondePublica      String?
+  /// Flags de prioridade
+  prioritario      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  resolutionItems  ResolutionItem[]
+  recursos         RecursoPublico[]
+  diarios          DiarioMunicipal[]
+  investSus        InvestSusRegistro[]
+  douPortarias     DouPortariaMunicipio[]
+
+  @@index([uf])
+  @@index([mesoregiao])
+  @@index([cnpjFms])
+}
+
+// ================================================================
+// Multi-Tenant — Perfil de Carteira por Cliente
+// ================================================================
+
+/// Configuração de carteira por tenant (multi-tenant)
+model TenantWalletConfig {
+  id      String @id @default(cuid())
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId String @unique
+
+  /// Território da carteira
+  ibgesMunicipios       String[]         /// IBGEs dos municípios monitorados
+  tier1Ibges            String[]         /// Tier 1 — monitoramento prioritário
+  tier2Ibges            String[]         /// Tier 2
+  mesorregioes          String[]         /// Mesorregiões inteiras (opcional)
+
+  /// Portfólio de produtos
+  categoriasEquipamento String[]         /// Códigos de EquipamentoCategoria
+
+  /// Configurações de alerta
+  bandaMinima           BandaOportunidade @default(B)
+  fontes                FonteDocumento[]  /// Quais fontes monitorar
+  palavrasChaveExtra    String[]          /// Termos adicionais específicos
+  alertaWhatsapp        String?
+  alertaEmail           String?
+  alertaTelegram        String?
+
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+// ================================================================
+// Dicionário de Equipamentos Médicos
+// ================================================================
+
+/// Dicionário controlado de categorias de equipamentos médicos
+model EquipamentoCategoria {
+  codigo    String   @id /// Ex: TOMOGRAFO, ULTRASSOM, ARCO_CIRURGICO
+  nome      String   /// Nome legível
+  sinonimos String[] /// Termos alternativos para a IA identificar
+  segmento  String?  /// Ex: IMAGEM, MONITORACAO, CIRURGIA, LABORATORIO
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([segmento])
+}
+
+// ================================================================
+// Recurso Público — Pipeline do Dinheiro
+// ================================================================
+
+/// Entidade consolidada que rastreia o ciclo completo de um recurso público
+model RecursoPublico {
+  id              String   @id @default(cuid())
+  /// Chave de negócio: TIPO|NUMERO|CNPJ_BENEFICIARIO
+  chaveRecurso    String   @unique
+  tipo            String   /// EMENDA / CONVENIO / FUNDO_FUNDO / RESOLUCAO_REPASSE
+  ibgeMunicipio   String
+  cnpjBeneficiario String?
+  nomeBeneficiario String?
+  valor           Decimal? @db.Decimal(24, 4)
+  objeto          String?  @db.Text
+  categoriaEquipamento String?
+  programa        String?
+  estagio         EstagioRecurso @default(INDICADO)
+  score           Int      @default(0)    /// 0-100
+  banda           BandaOportunidade @default(D)
+  prazoExecucao   DateTime?
+  dataUltimoEvento DateTime?
+  fonteOrigem     FonteDocumento
+  /// FKs opcionais para entidades relacionadas
+  pncpContratacaoId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  municipio         Municipio          @relation(fields: [ibgeMunicipio], references: [ibge])
+  eventos           RecursoEvento[]
+  resolucoes        Resolution[]
+  douPortarias      DouPortaria[]
+  diarios           DiarioMunicipal[]
+  investSus         InvestSusRegistro[]
+  crmOportunidades  CrmOpportunity[]
+
+  @@index([ibgeMunicipio])
+  @@index([banda])
+  @@index([estagio])
+  @@index([cnpjBeneficiario])
+  @@index([dataUltimoEvento])
+}
+
+/// Histórico imutável (append-only) de eventos de um recurso público
+model RecursoEvento {
+  id        String   @id @default(cuid())
+  recurso   RecursoPublico @relation(fields: [recursoId], references: [id], onDelete: Cascade)
+  recursoId String
+
+  tipo        TipoEventoRecurso
+  descricao   String
+  documento   String?  /// URL do documento que comprova
+  valor       Decimal? @db.Decimal(24, 4)
+  data        DateTime
+  fonte       FonteDocumento
+  confianca   Float    @default(1.0) /// 0-1 — confiança da extração IA
+  revisadoPor String?  /// userId se houve revisão humana
+  metadados   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([recursoId, data])
+  @@index([tipo])
+}
+
+// ================================================================
+// Portarias DOU / INLABS
+// ================================================================
+
+model DouPortaria {
+  id              String   @id @default(cuid())
+  numeroPortaria  String   @unique
+  tipo            String   /// GM_MS / FUNDO_FUNDO / HABILITACAO / CONVENIO
+  secao           String?  /// Seção 1/2/3 do DOU
+  dataPublicacao  DateTime
+  orgaoEmissor    String?
+  resumoIa        String?  @db.Text
+  valorTotal      Decimal? @db.Decimal(24, 4)
+  ufAlvo          String?
+  categoriaEquipamento String?
+  urlOriginal     String?
+  xmlOrigem       String?  /// Path do XML INLABS
+  hashConteudo    String?  @unique
+  recursoId       String?
+  status          ResolutionStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  municipiosAlvo DouPortariaMunicipio[]
+  recurso        RecursoPublico? @relation(fields: [recursoId], references: [id])
+
+  @@index([dataPublicacao])
+  @@index([tipo])
+  @@index([status])
+  @@index([ufAlvo])
+}
+
+/// Municípios alvo de uma portaria DOU (relação N:N)
+model DouPortariaMunicipio {
+  id          String      @id @default(cuid())
+  portaria    DouPortaria @relation(fields: [portariaId], references: [id], onDelete: Cascade)
+  portariaId  String
+  municipio   Municipio   @relation(fields: [ibge], references: [ibge])
+  ibge        String
+
+  @@unique([portariaId, ibge])
+  @@index([ibge])
+}
+
+// ================================================================
+// Diários Municipais
+// ================================================================
+
+model DiarioMunicipal {
+  id              String   @id @default(cuid())
+  fonte           FonteDocumento
+  ibgeMunicipio   String
+  dataPublicacao  DateTime
+  tipo            String   /// DFD / CREDITO_ADICIONAL / COTACAO / DECRETO / ATA_CIB
+  titulo          String?
+  conteudo        String?  @db.Text
+  resumoIa        String?  @db.Text
+  valorEnvolvido  Decimal? @db.Decimal(24, 4)
+  categoriaEquipamento String?
+  urlOriginal     String?
+  hashConteudo    String?  @unique
+  recursoId       String?
+  status          ResolutionStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  municipio Municipio       @relation(fields: [ibgeMunicipio], references: [ibge])
+  recurso   RecursoPublico? @relation(fields: [recursoId], references: [id])
+
+  @@index([ibgeMunicipio])
+  @@index([dataPublicacao])
+  @@index([tipo])
+  @@index([status])
+}
+
+// ================================================================
+// InvestSUS / FNS
+// ================================================================
+
+model InvestSusRegistro {
+  id                String   @id @default(cuid())
+  ibgeMunicipio     String
+  tipo              String   /// EMENDA / PROPOSTA / EMPENHO / PAGAMENTO / SALDO_FMS
+  numeroInstrumento String?
+  parlamentar       String?  /// Nome do parlamentar (emendas parlamentares)
+  objeto            String?  @db.Text
+  valor             Decimal? @db.Decimal(24, 4)
+  dataReferencia    DateTime
+  categoriaEquipamento String?
+  recursoId         String?
+  origem            String   @default("CSV_MANUAL") /// CSV_MANUAL / API
+
+  createdAt DateTime @default(now())
+
+  municipio Municipio       @relation(fields: [ibgeMunicipio], references: [ibge])
+  recurso   RecursoPublico? @relation(fields: [recursoId], references: [id])
+
+  @@index([ibgeMunicipio])
+  @@index([tipo])
+  @@index([dataReferencia])
+}
+
+// ================================================================
+// Qualidade Operacional
+// ================================================================
+
+/// Itens que precisam de revisão humana
+model FilaRevisao {
+  id           String   @id @default(cuid())
+  entidadeTipo String   /// RESOLUTION / DOU / DIARIO_MUNICIPAL
+  entidadeId   String
+  motivo       String   /// CNPJ_NAO_ENCONTRADO / BAIXA_CONFIANCA / VALOR_ANOMALO / DUPLICIDADE
+  extracao     Json?    /// O que a IA extraiu (para revisar)
+  confianca    Float?
+  status       String   @default("PENDENTE") /// PENDENTE / APROVADO / CORRIGIDO / DESCARTADO
+  revisadoPor  String?
+  revisadoEm   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([entidadeTipo, status])
+  @@index([status])
+}
+
+/// Log de execução de cada ciclo de cada robô (observabilidade)
+model CollectorRun {
+  id               String   @id @default(cuid())
+  fonte            FonteDocumento
+  iniciadoEm       DateTime @default(now())
+  concluidoEm      DateTime?
+  status           String   @default("RUNNING") /// RUNNING / COMPLETED / FAILED
+  itensLidos       Int      @default(0)
+  itensNovos       Int      @default(0)
+  itensAtualizados Int      @default(0)
+  itensRejeitados  Int      @default(0)
+  itensErro        Int      @default(0)
+  proximaExecucao  DateTime?
+  ultimoErro       String?  @db.Text
+  metadados        Json?
+
+  @@index([fonte, status])
+  @@index([iniciadoEm])
 }

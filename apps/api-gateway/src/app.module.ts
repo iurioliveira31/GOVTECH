@@ -17,6 +17,8 @@ import { ResolutionsModule } from './resolutions/resolutions.module';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
+import { WalletConfigModule } from './wallet-config/wallet-config.module';
+
 @Module({
   imports: [
     // ── Configuração global ─────────────────────────────────────────────────
@@ -26,14 +28,19 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     }),
 
     // ── Rate Limiting global ────────────────────────────────────────────────
-    // Protege contra abuso de API: 100 requests por 60s por IP (configurável via env)
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl: config.get<number>('THROTTLE_TTL', 60_000),
+            name: 'default',
+            ttl: config.get<number>('THROTTLE_TTL', 60000),
             limit: config.get<number>('THROTTLE_LIMIT', 100),
+          },
+          {
+            name: 'login',
+            ttl: 60000,
+            limit: 5, // Limite de 5 tentativas por minuto para brute-force
           },
         ],
       }),
@@ -53,6 +60,8 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     EmailModule,
     ResolutionAlertsModule,
     ResolutionsModule,
+    // ── Intelligence v2 ───────────────────────────────────────────────────────
+    WalletConfigModule,
   ],
   providers: [
     // Rate limiting aplicado globalmente em todos os endpoints

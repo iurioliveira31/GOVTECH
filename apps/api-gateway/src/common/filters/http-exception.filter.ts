@@ -40,7 +40,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
         exception instanceof Error ? exception.stack : JSON.stringify(exception),
       );
       
-      if (exception instanceof Error) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isProduction) {
+        message = 'Erro interno do servidor';
+      } else if (exception instanceof Error) {
         message = exception.message;
       }
     }

@@ -7,9 +7,12 @@ export class ResolutionsService {
 
   async findAll(page = 1, limit = 1000) {
     const skip = (page - 1) * limit;
-    // Mostrar apenas a partir do dia 10/07/2026 conforme pedido do usuário
     const cutoffDate = new Date('2026-07-10T00:00:00.000Z');
-    const where = { dataPublicacao: { gte: cutoffDate } };
+    const where = {
+      dataPublicacao: { gte: cutoffDate },
+      // NÃO exibir resoluções administrativas/convalidações descartadas pela IA
+      status: { notIn: ['DESCARTADA', 'ERROR', 'PENDING'] as any[] },
+    };
 
     const [data, total] = await Promise.all([
       this.prisma.resolution.findMany({

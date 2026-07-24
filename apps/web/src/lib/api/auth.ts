@@ -95,6 +95,11 @@ export const authApi = {
     await apiClient.post('/auth/resend-verification');
   },
 
+  verifyEmail: async (token: string): Promise<{ success: boolean; message: string }> => {
+    const { data } = await apiClient.post<{ success: boolean; message: string }>('/auth/verify-email', { token });
+    return data;
+  },
+
   startTrial: async (cnpj?: string): Promise<SubscriptionInfo> => {
     const { data } = await apiClient.post<SubscriptionInfo>('/subscriptions/trial', { cnpj });
     return data;

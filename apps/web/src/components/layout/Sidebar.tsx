@@ -9,13 +9,13 @@ const navItems = [
   {
     section: 'Principal',
     links: [
-      { href: '/dashboard',    label: 'Dashboard',    icon: '⊞' },
-      { href: '/busca',        label: 'Busca PNCP',   icon: '🔍' },
-      { href: '/favoritos',    label: 'Favoritos',    icon: '⭐' },
-      { href: '/alertas',      label: 'Alertas',      icon: '🔔' },
-      { href: '/inteligencia', label: 'Inteligência', icon: '🎯' },
-      { href: '/resolucoes',   label: 'Resoluções SES', icon: '📄' },
-
+      { href: '/dashboard',    label: 'Dashboard',        icon: '⊞' },
+      { href: '/busca',        label: 'Busca PNCP',       icon: '🔍' },
+      { href: '/favoritos',    label: 'Favoritos',        icon: '⭐' },
+      { href: '/alertas',      label: 'Alertas',          icon: '🔔' },
+      { href: '/inteligencia', label: 'Inteligência',     icon: '🎯' },
+      { href: '/resolucoes',   label: 'Resoluções SES',   icon: '📄' },
+      { href: '/carteira',     label: 'Minha Carteira',   icon: '🗂' },
     ],
   },
 

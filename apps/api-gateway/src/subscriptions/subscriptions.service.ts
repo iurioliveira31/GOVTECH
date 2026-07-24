@@ -58,13 +58,31 @@ const stripeMock = {
 };
 
 const getStripeClient = () => {
-  if (process.env.STRIPE_SECRET_KEY) {
-    return new Stripe(process.env.STRIPE_SECRET_KEY, {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (isProduction && !secretKey) {
+    throw new Error('FATAL: STRIPE_SECRET_KEY é obrigatória em ambiente de produção!');
+  }
+
+  if (secretKey) {
+    return new Stripe(secretKey, {
       apiVersion: '2024-06-20',
     } as any) as any;
   }
+
   return stripeMock;
 };
+
+const getFrontendUrl = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (isProduction && !frontendUrl) {
+    throw new Error('FATAL: FRONTEND_URL é obrigatória em ambiente de produção!');
+  }
+  return frontendUrl ?? 'http://localhost:3000';
+};
+
 
 @Injectable()
 export class SubscriptionsService {
@@ -137,10 +155,11 @@ export class SubscriptionsService {
         name: user.name,
         trialEndsAt: subscription.trialEndsAt!,
       });
+      const verificationToken = await this.authService.generateEmailVerificationToken(user.id, user.email);
       await this.email.sendEmailVerification({
         to: user.email,
         name: user.name,
-        token: crypto.randomUUID(), // em produção: salvar e usar link real
+        token: verificationToken,
       });
     } else if (dto.planChoice === 'ENTERPRISE') {
       // Enterprise: sem subscription automática, contact vendas
@@ -158,12 +177,13 @@ export class SubscriptionsService {
         customerId = customer.id;
       }
 
+      const frontendUrl = getFrontendUrl();
       const session = await stripeClient.checkout.sessions.create({
         customer: customerId,
         mode: 'subscription',
         line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/dashboard?payment=success`,
-        cancel_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/onboarding/plano?canceled=true`,
+        success_url: `${frontendUrl}/dashboard?payment=success`,
+        cancel_url: `${frontendUrl}/onboarding/plano?canceled=true`,
         metadata: { userId: user.id },
       });
 
@@ -272,12 +292,13 @@ export class SubscriptionsService {
       }
     }
 
+    const frontendUrl = getFrontendUrl();
     const session = await stripeClient.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/dashboard?payment=success`,
-      cancel_url: `${process.env.FRONTEND_URL ?? 'http://localhost:3000'}/onboarding/plano?canceled=true`,
+      success_url: `${frontendUrl}/dashboard?payment=success`,
+      cancel_url: `${frontendUrl}/onboarding/plano?canceled=true`,
       metadata: { userId },
     });
 

@@ -16,8 +16,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.25'
-          memory: 256M
+          cpus: '1.0'
+          memory: 1024M
     logging:
       driver: 'json-file'
       options:
@@ -54,7 +54,7 @@ services:
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=false
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
-      - 'ES_JAVA_OPTS=-Xms256m -Xmx256m'
+      - 'ES_JAVA_OPTS=-Xms1024m -Xmx1024m'
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -68,8 +68,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.35'
-          memory: 350M
+          cpus: '1.5'
+          memory: 2048M
     logging:
       driver: 'json-file'
       options:
@@ -88,12 +88,20 @@ services:
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
       - RESEND_API_KEY=${RESEND_API_KEY}
-      - EMAIL_FROM=onboarding@resend.dev
+      - EMAIL_FROM=${EMAIL_FROM:-LicitaAI <noreply@licitaai.com.br>}
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_prod}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_STARTER_MONTHLY=${STRIPE_PRICE_STARTER_MONTHLY}
+      - STRIPE_PRICE_STARTER_ANNUAL=${STRIPE_PRICE_STARTER_ANNUAL}
+      - STRIPE_PRICE_PRO_MONTHLY=${STRIPE_PRICE_PRO_MONTHLY}
+      - STRIPE_PRICE_PRO_ANNUAL=${STRIPE_PRICE_PRO_ANNUAL}
       - EVOLUTION_API_URL=http://evolution-api:8080
       - EVOLUTION_API_KEY=LicitaAI_SecretKey_123!
       - EVOLUTION_INSTANCE_NAME=LicitaAI
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-LicitaAI_InternalKey_DefaultSecret_123!}
     ports:
       - '4000:4000'
     depends_on:
@@ -104,8 +112,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.30'
-          memory: 256M
+          cpus: '0.50'
+          memory: 512M
     logging:
       driver: 'json-file'
       options:
@@ -123,12 +131,13 @@ services:
       - ELASTICSEARCH_USERNAME=elastic
       - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-elastic_prod_password}
       - RESEND_API_KEY=${RESEND_API_KEY}
-      - EMAIL_FROM=onboarding@resend.dev
+      - EMAIL_FROM=${EMAIL_FROM:-LicitaAI <noreply@licitaai.com.br>}
       - WHATSAPP_PROVIDER=evolution
       - WHATSAPP_API_URL=http://evolution-api:8080/message/sendText/LicitaAI
       - WHATSAPP_API_KEY=LicitaAI_SecretKey_123!
       - GEMINI_API_KEY=${GEMINI_API_KEY:-configure_gemini_api_key_aqui}
       - PNCP_PAGE_SIZE=50
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY:-LicitaAI_InternalKey_DefaultSecret_123!}
     depends_on:
       postgres:
         condition: service_healthy
@@ -139,8 +148,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.30'
-          memory: 256M
+          cpus: '1.0'
+          memory: 1024M
     logging:
       driver: 'json-file'
       options:
@@ -153,7 +162,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - NEXT_PUBLIC_API_URL=http://137.131.227.255:4000/api/v1
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://137.131.227.255:4000/api/v1}
+      - INTERNAL_API_URL=http://api-gateway:4000/api/v1
     ports:
       - '3000:3000'
     depends_on:
@@ -211,6 +221,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_prod_password}
+      USER_LOGIN: ${BULLBOARD_USER:-admin}
+      USER_PASSWORD: ${BULLBOARD_PASSWORD:?BULLBOARD_PASSWORD is required}
     depends_on:
       redis:
         condition: service_healthy

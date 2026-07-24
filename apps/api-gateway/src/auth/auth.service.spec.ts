@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from '../email/email.service';
 
 jest.mock('bcrypt');
 
@@ -32,10 +33,16 @@ describe('AuthService', () => {
 
   const mockJwt = {
     signAsync: jest.fn(),
+    verifyAsync: jest.fn(),
   };
 
   const mockConfig = {
     get: jest.fn((key: string, defaultValue?: any) => defaultValue),
+    getOrThrow: jest.fn((key: string) => 'secret-key'),
+  };
+
+  const mockEmail = {
+    sendEmailVerification: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +52,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrisma },
         { provide: JwtService, useValue: mockJwt },
         { provide: ConfigService, useValue: mockConfig },
+        { provide: EmailService, useValue: mockEmail },
       ],
     }).compile();
 
@@ -86,7 +94,7 @@ describe('AuthService', () => {
       (mockPrisma.user.update as jest.Mock).mockResolvedValue({});
       (mockPrisma.subscription.findUnique as jest.Mock).mockResolvedValue(mockSub);
 
-      const result = await service.login({
+      const result: any = await service.login({
         email: 'test@example.com',
         password: 'password123',
       });

@@ -646,29 +646,29 @@ export default function CadastroPage() {
 
             <div>
               <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 8 }}>
-                Cadastro Concluído!
+                Confirme seu E-mail
               </h2>
               <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6, maxWidth: 360 }}>
-                Seu acesso foi criado com sucesso. Como estamos em um <strong>ambiente de demonstração</strong>, não é necessário confirmar seu e-mail.
+                Enviamos um link de ativação segura para o e-mail <strong style={{ color: 'var(--color-text-primary)' }}>{form.email}</strong>.
               </p>
             </div>
 
             <div style={{
               padding: '14px 20px',
-              background: 'var(--color-success-bg)',
-              border: '1px solid rgba(16,185,129,0.25)',
+              background: 'rgba(37,99,235,0.06)',
+              border: '1px solid rgba(37,99,235,0.25)',
               borderRadius: 12,
-              fontSize: 13, color: 'var(--color-success)',
+              fontSize: 13, color: 'var(--color-text-secondary)',
               maxWidth: 360,
             }}>
-              ✅ Você pode usar o sistema enquanto confirma seu e-mail. Seu trial de 30 dias já começou!
+              ✉️ Por favor, acesse sua caixa de entrada e clique no link para ativar sua conta e liberar o acesso completo ao dashboard. O link expira em 24 horas.
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 300 }}>
-              <button id="btn-goto-dashboard" type="button" className="btn btn-primary btn-lg"
-                onClick={() => { window.location.href = '/dashboard'; }}
+              <button id="btn-goto-login" type="button" className="btn btn-primary btn-lg"
+                onClick={() => { window.location.href = '/login'; }}
                 style={{ width: '100%' }}>
-                Ir para o Dashboard →
+                Voltar para o Login →
               </button>
 
               <button id="btn-resend" type="button"

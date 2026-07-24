@@ -36,6 +36,11 @@ const ANALYST = {
 };
 
 async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('⚠️ [SEED] Bloqueado: A execução de seeds está desativada em ambiente de produção (NODE_ENV=production).');
+    process.exit(0);
+  }
+
   console.log('\n🌱 Iniciando seed do banco de dados...\n');
 
   // ── 1. Tenant ────────────────────────────────────────────────────────────

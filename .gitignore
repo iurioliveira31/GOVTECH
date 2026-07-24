@@ -60,3 +60,33 @@ logs/
 # Docker
 # ──────────────────────────────────────────────────────────────────────────────
 docker-compose.override.yml
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Local drafts, test files, and binaries
+# ──────────────────────────────────────────────────────────────────────────────
+test-*.js
+test-*.ts
+test-*.tsx
+scratch*.js
+insert_mock.js
+check-db.js
+clear-db.js
+query_db.js
+debug_*.js
+*.html
+images.tar
+next.tar.gz
+qr_output.json
+test-ai.js
+test-prod.js
+test-ai-specific-dates.ts
+scratch_test_scraper.js
+ssh_test.exp
+test_axios.js
+test_axios2.js
+test_axios3.js
+test_old_portal.js
+trigger-ses.js
+trigger-sync.ts
+axios_output.html
+old_portal.html

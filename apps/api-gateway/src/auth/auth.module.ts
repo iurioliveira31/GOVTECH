@@ -7,9 +7,12 @@ import { TenantGuard } from './guards/tenant.guard';
 import { SubscriptionGuard } from './guards/subscription.guard';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { EmailModule } from '../email/email.module';
+import { EmailVerifiedGuard } from './guards/email-verified.guard';
 
 @Module({
   imports: [
+    EmailModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -21,7 +24,7 @@ import { AuthController } from './auth.controller';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard],
-  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard],
+  providers: [AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard, EmailVerifiedGuard],
+  exports: [JwtModule, AuthService, JwtAuthGuard, RolesGuard, TenantGuard, SubscriptionGuard, EmailVerifiedGuard],
 })
 export class AuthModule {}

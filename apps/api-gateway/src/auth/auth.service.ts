@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RefreshDto } from './dto/auth.dto';
+import { EmailService } from '../email/email.service';
+import { authenticator } from 'otplib';
 
 interface JwtPayload {
   sub: string;
@@ -23,6 +25,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly email: EmailService,
   ) {}
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -41,6 +44,8 @@ export class AuthService {
         role: true,
         tenantId: true,
         isActive: true,
+        mfaEnabled: true,
+        mfaSecret: true,
       },
     });
 
@@ -53,6 +58,21 @@ export class AuthService {
     const passwordValid = await bcrypt.compare(dto.password, user.password);
     if (!passwordValid) {
       throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    // Se o MFA estiver ativo e configurado, retornar resposta provisória
+    if (user.mfaEnabled && user.mfaSecret) {
+      const mfaToken = await this.jwt.signAsync(
+        { sub: user.id, requireMfa: true },
+        {
+          secret: this.config.getOrThrow<string>('JWT_SECRET'),
+          expiresIn: '5m',
+        },
+      );
+      return {
+        requireMfa: true,
+        mfaToken,
+      };
     }
 
     // 2. Gerar tokens
@@ -256,6 +276,169 @@ export class AuthService {
     const refreshTokenHash = this.hashToken(refreshToken);
 
     return { accessToken, refreshToken, refreshTokenHash };
+  }
+
+  async generateEmailVerificationToken(userId: string, email: string): Promise<string> {
+    return this.jwt.signAsync(
+      { sub: userId, email, purpose: 'email-verification' },
+      {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+        expiresIn: '24h',
+      },
+    );
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      const payload = await this.jwt.verifyAsync(token, {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+      });
+
+      if (payload.purpose !== 'email-verification') {
+        throw new UnauthorizedException('Token inválido para verificação de e-mail');
+      }
+
+      const userId = payload.sub;
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { emailVerifiedAt: new Date() },
+      });
+
+      return { success: true, message: 'E-mail confirmado com sucesso!' };
+    } catch (err: any) {
+      throw new UnauthorizedException(
+        err.name === 'TokenExpiredError'
+          ? 'O link de verificação expirou. Solicite um novo reenvio.'
+          : 'Link de verificação inválido.',
+      );
+    }
+  }
+
+  async resendVerification(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, emailVerifiedAt: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    if (user.emailVerifiedAt) {
+      return { success: true, message: 'Este e-mail já foi verificado.' };
+    }
+
+    const token = await this.generateEmailVerificationToken(user.id, user.email);
+
+    await this.email.sendEmailVerification({
+      to: user.email,
+      name: user.name,
+      token,
+    });
+
+    return { success: true, message: 'E-mail de confirmação reenviado com sucesso!' };
+  }
+
+  async verifyMfa(mfaToken: string, code: string) {
+    try {
+      const payload = await this.jwt.verifyAsync(mfaToken, {
+        secret: this.config.getOrThrow<string>('JWT_SECRET'),
+      });
+
+      if (!payload.requireMfa) {
+        throw new UnauthorizedException('Token inválido para verificação de segundo fator');
+      }
+
+      const userId = payload.sub;
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          tenantId: true,
+          mfaSecret: true,
+        },
+      });
+
+      if (!user || !user.mfaSecret) {
+        throw new UnauthorizedException('Chave secreta do MFA não configurada');
+      }
+
+      // Validar o código de 6 dígitos com otplib
+      const isValid = authenticator.verify({
+        token: code,
+        secret: user.mfaSecret,
+      });
+
+      if (!isValid) {
+        throw new UnauthorizedException('Código de segurança inválido');
+      }
+
+      // 2. Gerar tokens definitivos
+      const { accessToken, refreshToken, refreshTokenHash } = await this.generateTokens({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+      });
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await this.prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          tenantId: user.tenantId,
+          tokenHash: refreshTokenHash,
+          expiresAt,
+        },
+      });
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+
+      // Buscar subscription
+      const subscription = await this.prisma.subscription.findUnique({
+        where: { userId: user.id },
+        select: {
+          plan: true,
+          status: true,
+          trialEndsAt: true,
+          currentPeriodEnd: true,
+          hasUsedTrial: true,
+        },
+      });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          nome: user.name,
+          role: user.role,
+          tenantId: user.tenantId,
+        },
+        subscription: subscription
+          ? {
+              plan: subscription.plan,
+              status: subscription.status,
+              trialEndsAt: subscription.trialEndsAt?.toISOString() ?? null,
+              currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+              hasUsedTrial: subscription.hasUsedTrial,
+            }
+          : null,
+      };
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new UnauthorizedException('Token de verificação inválido ou expirado.');
+    }
   }
 
   public hashToken(token: string): string {

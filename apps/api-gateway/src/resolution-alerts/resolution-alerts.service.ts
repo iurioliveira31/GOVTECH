@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 
@@ -13,6 +13,42 @@ export class ResolutionAlertsService {
 
   async createAlert(userId: string, data: any) {
     const { nome, municipios, palavrasChave, valorMinimo, whatsapp, email } = data;
+
+    // Buscar a assinatura (subscription) ativa do usuário
+    const sub = await this.prisma.subscription.findUnique({
+      where: { userId },
+    });
+
+    const planName = sub?.plan ?? 'TRIAL';
+    const subStatus = sub?.status ?? 'TRIALING';
+
+    const now = new Date();
+    const isActive =
+      (subStatus === 'TRIALING' && sub?.trialEndsAt && sub.trialEndsAt > now) ||
+      (subStatus === 'ACTIVE' && sub?.currentPeriodEnd && sub.currentPeriodEnd > now) ||
+      subStatus === 'PAST_DUE';
+
+    if (!isActive && sub) {
+      throw new ForbiddenException('Sua assinatura expirou. Renove seu plano para cadastrar alertas.');
+    }
+
+    // Buscar configuração de limites do plano cadastrado no BD (com fallback de segurança)
+    const planConfig = await this.prisma.planConfig.findUnique({
+      where: { name: planName as any },
+    });
+
+    const maxAlerts = planConfig?.maxAlertsPerDay ?? 5;
+
+    // Contar alertas cadastrados ativos do usuário
+    const count = await this.prisma.resolutionAlert.count({
+      where: { userId, isActive: true },
+    });
+
+    if (count >= maxAlerts) {
+      throw new ForbiddenException(
+        `Você atingiu o limite máximo de ${maxAlerts} alertas para o plano ${planName}. Faça upgrade da assinatura para cadastrar mais.`,
+      );
+    }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const finalEmail = email || user?.email;
